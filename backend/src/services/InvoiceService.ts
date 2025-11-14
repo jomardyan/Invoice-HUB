@@ -5,6 +5,9 @@ import { InvoiceItem } from '@/entities/InvoiceItem';
 import { Company } from '@/entities/Company';
 import { Customer } from '@/entities/Customer';
 import { TaxCalculationService } from './TaxCalculationService';
+import EmailService from './EmailService';
+import SMSService from './SMSService';
+import NotificationService, { NotificationType, NotificationPriority } from './NotificationService';
 import logger from '@/utils/logger';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -345,7 +348,7 @@ export class InvoiceService {
   /**
    * Mark invoice as sent to customer
    */
-  async markAsSent(tenantId: string, invoiceId: string, sentDate?: Date): Promise<Invoice> {
+  async markAsSent(tenantId: string, invoiceId: string, sentDate?: Date, sendEmail: boolean = true): Promise<Invoice> {
     try {
       const invoice = await this.getInvoiceById(tenantId, invoiceId);
       if (!invoice) throw new Error('Invoice not found');
@@ -360,6 +363,58 @@ export class InvoiceService {
 
       const saved = await this.invoiceRepository.save(invoice);
       logger.info(`Invoice marked as sent: ${invoice.invoiceNumber}`, { tenantId, invoiceId });
+
+      // Send email notification if enabled
+      if (sendEmail && invoice.customer && invoice.customer.email) {
+        try {
+          await EmailService.sendInvoiceEmail(invoice.customer.email, {
+            invoiceNumber: invoice.invoiceNumber || '',
+            companyName: invoice.company?.name || 'Invoice Hub',
+            customerName: invoice.customer.name,
+            totalAmount: Number(invoice.total),
+            dueDate: invoice.dueDate,
+            invoiceUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/invoices/${invoice.id}`,
+          });
+          logger.info(`Invoice email sent: ${invoice.invoiceNumber}`, { tenantId, invoiceId });
+        } catch (emailError: any) {
+          logger.error(`Failed to send invoice email: ${invoice.invoiceNumber}`, { error: emailError.message });
+          // Don't fail the operation if email fails
+        }
+      }
+
+      // Send SMS notification if customer has phone
+      if (invoice.customer && (invoice.customer as any).phone) {
+        try {
+          await SMSService.sendInvoiceSentSMS(
+            (invoice.customer as any).phone,
+            invoice.invoiceNumber || '',
+            invoice.company?.name || 'Invoice Hub'
+          );
+          logger.info(`Invoice SMS sent: ${invoice.invoiceNumber}`, { tenantId, invoiceId });
+        } catch (smsError: any) {
+          logger.error(`Failed to send invoice SMS: ${invoice.invoiceNumber}`, { error: smsError.message });
+        }
+      }
+
+      // Create in-app notification for company users
+      try {
+        await NotificationService.createNotification({
+          tenantId,
+          userId: 'company-owner-id', // TODO: Get actual company owner user ID
+          type: NotificationType.INVOICE_SENT,
+          title: 'Invoice Sent',
+          message: `Invoice ${invoice.invoiceNumber} has been sent to ${invoice.customer?.name}`,
+          data: {
+            invoiceId: invoice.id,
+            invoiceNumber: invoice.invoiceNumber,
+            customerName: invoice.customer?.name,
+            amount: Number(invoice.total),
+          },
+          priority: NotificationPriority.NORMAL,
+        });
+      } catch (notifError: any) {
+        logger.error(`Failed to create notification: ${invoice.invoiceNumber}`, { error: notifError.message });
+      }
 
       return saved;
     } catch (error) {
@@ -419,8 +474,9 @@ export class InvoiceService {
       (invoice.metadata as any).paidAmount = newPaidAmount;
 
       const remainingAmount = invoice.total - newPaidAmount;
+      const fullyPaid = remainingAmount === 0;
 
-      if (remainingAmount === 0) {
+      if (fullyPaid) {
         invoice.status = InvoiceStatus.PAID;
         invoice.paidAt = paymentDate || new Date();
       }
@@ -429,6 +485,45 @@ export class InvoiceService {
 
       const saved = await this.invoiceRepository.save(invoice);
       logger.info(`Payment recorded for invoice: ${invoice.invoiceNumber}`, { tenantId, invoiceId, paidAmount });
+
+      // Send notifications if fully paid
+      if (fullyPaid) {
+        // Send SMS to customer
+        if (invoice.customer && (invoice.customer as any).phone) {
+          try {
+            await SMSService.sendPaymentReceivedSMS(
+              (invoice.customer as any).phone,
+              invoice.invoiceNumber || '',
+              Number(invoice.total),
+              invoice.company?.name || 'Invoice Hub'
+            );
+            logger.info(`Payment confirmation SMS sent: ${invoice.invoiceNumber}`);
+          } catch (smsError: any) {
+            logger.error(`Failed to send payment SMS: ${invoice.invoiceNumber}`, { error: smsError.message });
+          }
+        }
+
+        // Create in-app notification
+        try {
+          await NotificationService.createNotification({
+            tenantId,
+            userId: 'company-owner-id', // TODO: Get actual company owner user ID
+            type: NotificationType.INVOICE_PAID,
+            title: 'Invoice Paid',
+            message: `Invoice ${invoice.invoiceNumber} has been fully paid by ${invoice.customer?.name}`,
+            data: {
+              invoiceId: invoice.id,
+              invoiceNumber: invoice.invoiceNumber,
+              customerName: invoice.customer?.name,
+              amount: Number(invoice.total),
+              paidDate: invoice.paidAt,
+            },
+            priority: NotificationPriority.NORMAL,
+          });
+        } catch (notifError: any) {
+          logger.error(`Failed to create payment notification: ${invoice.invoiceNumber}`, { error: notifError.message });
+        }
+      }
 
       return saved;
     } catch (error) {
@@ -536,6 +631,127 @@ export class InvoiceService {
       return stats;
     } catch (error) {
       logger.error('Error calculating invoice statistics:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Send payment reminder for overdue invoices
+   */
+  async sendPaymentReminder(tenantId: string, invoiceId: string): Promise<void> {
+    try {
+      const invoice = await this.getInvoiceById(tenantId, invoiceId);
+      if (!invoice) throw new Error('Invoice not found');
+
+      if (invoice.status === InvoiceStatus.PAID) {
+        throw new Error('Cannot send reminder for paid invoice');
+      }
+
+      if (!invoice.customer || !invoice.customer.email) {
+        throw new Error('Customer email not available');
+      }
+
+      const now = new Date();
+      const dueDate = new Date(invoice.dueDate);
+      const daysOverdue = Math.floor((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+
+      // Send email reminder
+      await EmailService.sendPaymentReminder(invoice.customer.email, {
+        invoiceNumber: invoice.invoiceNumber || '',
+        companyName: invoice.company?.name || 'Invoice Hub',
+        customerName: invoice.customer.name,
+        totalAmount: Number(invoice.total),
+        dueDate: invoice.dueDate,
+        daysOverdue: Math.max(0, daysOverdue),
+        paymentUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/invoices/${invoice.id}/pay`,
+      });
+
+      // Send SMS reminder if customer has phone
+      if ((invoice.customer as any).phone) {
+        try {
+          await SMSService.sendPaymentReminderSMS((invoice.customer as any).phone, {
+            customerName: invoice.customer.name,
+            invoiceNumber: invoice.invoiceNumber || '',
+            totalAmount: Number(invoice.total),
+            dueDate: invoice.dueDate,
+            companyName: invoice.company?.name || 'Invoice Hub',
+          });
+          logger.info(`Payment reminder SMS sent: ${invoice.invoiceNumber}`, { tenantId, invoiceId });
+        } catch (smsError: any) {
+          logger.error(`Failed to send reminder SMS: ${invoice.invoiceNumber}`, { error: smsError.message });
+        }
+      }
+
+      // Create in-app notification
+      try {
+        await NotificationService.createNotification({
+          tenantId,
+          userId: 'company-owner-id', // TODO: Get actual company owner user ID
+          type: NotificationType.PAYMENT_REMINDER,
+          title: 'Payment Reminder Sent',
+          message: `Payment reminder sent to ${invoice.customer.name} for invoice ${invoice.invoiceNumber}`,
+          data: {
+            invoiceId: invoice.id,
+            invoiceNumber: invoice.invoiceNumber,
+            customerName: invoice.customer.name,
+            daysOverdue,
+          },
+          priority: daysOverdue > 7 ? NotificationPriority.HIGH : NotificationPriority.NORMAL,
+        });
+      } catch (notifError: any) {
+        logger.error(`Failed to create reminder notification: ${invoice.invoiceNumber}`, { error: notifError.message });
+      }
+
+      logger.info(`Payment reminder sent: ${invoice.invoiceNumber}`, { tenantId, invoiceId, daysOverdue });
+    } catch (error) {
+      logger.error('Error sending payment reminder:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Send payment reminders for all overdue invoices
+   */
+  async sendOverdueReminders(tenantId: string, companyId?: string): Promise<number> {
+    try {
+      let query = this.invoiceRepository
+        .createQueryBuilder('invoice')
+        .leftJoinAndSelect('invoice.customer', 'customer')
+        .leftJoinAndSelect('invoice.company', 'company')
+        .where('invoice.tenantId = :tenantId', { tenantId })
+        .andWhere('invoice.status IN (:...statuses)', {
+          statuses: [InvoiceStatus.SENT, InvoiceStatus.VIEWED, InvoiceStatus.OVERDUE],
+        })
+        .andWhere('invoice.dueDate < :now', { now: new Date() });
+
+      if (companyId) {
+        query = query.andWhere('invoice.companyId = :companyId', { companyId });
+      }
+
+      const overdueInvoices = await query.getMany();
+      let sentCount = 0;
+
+      for (const invoice of overdueInvoices) {
+        try {
+          await this.sendPaymentReminder(tenantId, invoice.id);
+          sentCount++;
+
+          // Update status to OVERDUE if not already
+          if (invoice.status !== InvoiceStatus.OVERDUE) {
+            invoice.status = InvoiceStatus.OVERDUE;
+            await this.invoiceRepository.save(invoice);
+          }
+        } catch (error: any) {
+          logger.error(`Failed to send reminder for invoice ${invoice.invoiceNumber}`, {
+            error: error.message,
+          });
+        }
+      }
+
+      logger.info(`Sent ${sentCount} overdue payment reminders`, { tenantId, companyId });
+      return sentCount;
+    } catch (error) {
+      logger.error('Error sending overdue reminders:', error);
       throw error;
     }
   }

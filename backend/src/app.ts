@@ -15,6 +15,9 @@ import customersRoutes from './routes/customers';
 import productsRoutes from './routes/products';
 import invoicesRoutes from './routes/invoices';
 import templatesRoutes from './routes/templates';
+import schedulerRoutes from './routes/scheduler';
+import notificationsRoutes from './routes/notifications';
+import SchedulerService from './services/SchedulerService';
 
 class App {
   public app: Application;
@@ -72,6 +75,8 @@ class App {
     this.app.use(`/api/${config.apiVersion}`, productsRoutes);
     this.app.use(`/api/${config.apiVersion}`, invoicesRoutes);
     this.app.use(`/api/${config.apiVersion}`, templatesRoutes);
+    this.app.use(`/api/${config.apiVersion}`, schedulerRoutes);
+    this.app.use(`/api/${config.apiVersion}`, notificationsRoutes);
   }
 
   private initializeErrorHandling(): void {
@@ -90,6 +95,11 @@ class App {
       await redis.connect();
       logger.info('Redis connection established');
 
+      // Initialize and start scheduler
+      await SchedulerService.initialize();
+      await SchedulerService.start();
+      logger.info('Scheduler service started');
+
       // Start server
       this.app.listen(config.port, () => {
         logger.info(`Server running on port ${config.port} in ${config.env} mode`);
@@ -97,6 +107,28 @@ class App {
     } catch (error) {
       logger.error('Failed to start application:', error);
       process.exit(1);
+    }
+  }
+
+  public async stop(): Promise<void> {
+    try {
+      // Stop scheduler
+      await SchedulerService.stop();
+      logger.info('Scheduler service stopped');
+
+      // Close database connection
+      if (AppDataSource.isInitialized) {
+        await AppDataSource.destroy();
+        logger.info('Database connection closed');
+      }
+
+      // Close Redis connection
+      const redis = RedisClient.getInstance();
+      await redis.disconnect();
+      logger.info('Redis connection closed');
+    } catch (error) {
+      logger.error('Error during shutdown:', error);
+      throw error;
     }
   }
 }

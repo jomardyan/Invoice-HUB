@@ -3,6 +3,7 @@ import { body, param, query, validationResult } from 'express-validator';
 import { authMiddleware, requireTenant } from '@/middleware/auth';
 import { InvoiceService, InvoiceCreateInput, InvoiceUpdateInput } from '@/services/InvoiceService';
 import { InvoiceType, InvoiceStatus } from '@/entities/Invoice';
+import ExportService, { ExportFormat } from '@/services/ExportService';
 import logger from '@/utils/logger';
 
 const router: Router = Router();
@@ -363,6 +364,145 @@ router.get(
     } catch (error: any) {
       logger.error('Error retrieving invoice statistics:', error);
       res.status(400).json({
+        status: 'error',
+        message: error.message,
+      });
+    }
+  }
+);
+
+// POST: Send payment reminder for specific invoice
+router.post(
+  '/:tenantId/invoices/:invoiceId/send-reminder',
+  param('invoiceId').isUUID(),
+  async (req: any, res: any) => {
+    try {
+      const { tenantId, invoiceId } = req.params;
+
+      await invoiceService.sendPaymentReminder(tenantId, invoiceId);
+
+      res.json({
+        status: 'success',
+        message: 'Payment reminder sent successfully',
+      });
+    } catch (error: any) {
+      logger.error('Error sending payment reminder:', error);
+      res.status(error.message.includes('not found') ? 404 : 400).json({
+        status: 'error',
+        message: error.message,
+      });
+    }
+  }
+);
+
+// POST: Send reminders for all overdue invoices
+router.post(
+  '/:tenantId/invoices/send-overdue-reminders',
+  query('companyId').optional().isUUID(),
+  async (req: any, res: any) => {
+    try {
+      const { tenantId } = req.params;
+      const { companyId } = req.query;
+
+      const sentCount = await invoiceService.sendOverdueReminders(tenantId, companyId);
+
+      res.json({
+        status: 'success',
+        message: `Sent ${sentCount} payment reminders`,
+        data: { sentCount },
+      });
+    } catch (error: any) {
+      logger.error('Error sending overdue reminders:', error);
+      res.status(400).json({
+        status: 'error',
+        message: error.message,
+      });
+    }
+  }
+);
+
+// GET: Export single invoice
+router.get(
+  '/:tenantId/invoices/:invoiceId/export',
+  param('invoiceId').isUUID(),
+  query('format').isIn(Object.values(ExportFormat)),
+  async (req: any, res: any) => {
+    try {
+      const { tenantId, invoiceId } = req.params;
+      const { format } = req.query;
+
+      const invoice = await invoiceService.getInvoiceById(tenantId, invoiceId);
+      if (!invoice) {
+        return res.status(404).json({
+          status: 'error',
+          message: 'Invoice not found',
+        });
+      }
+
+      const result = await ExportService.exportInvoice(invoice, format as ExportFormat);
+
+      if (!result.success) {
+        return res.status(500).json({
+          status: 'error',
+          message: result.error || 'Export failed',
+        });
+      }
+
+      res.setHeader('Content-Type', result.mimeType);
+      res.setHeader('Content-Disposition', `attachment; filename="${result.filename}"`);
+      res.send(result.buffer);
+    } catch (error: any) {
+      logger.error('Error exporting invoice:', error);
+      res.status(500).json({
+        status: 'error',
+        message: error.message,
+      });
+    }
+  }
+);
+
+// POST: Export multiple invoices
+router.post(
+  '/:tenantId/invoices/export',
+  query('format').isIn(Object.values(ExportFormat)),
+  body('invoiceIds').isArray(),
+  body('invoiceIds.*').isUUID(),
+  async (req: any, res: any) => {
+    try {
+      const { tenantId } = req.params;
+      const { format } = req.query;
+      const { invoiceIds } = req.body;
+
+      const invoices = [];
+      for (const id of invoiceIds) {
+        const invoice = await invoiceService.getInvoiceById(tenantId, id);
+        if (invoice) {
+          invoices.push(invoice);
+        }
+      }
+
+      if (invoices.length === 0) {
+        return res.status(404).json({
+          status: 'error',
+          message: 'No invoices found',
+        });
+      }
+
+      const result = await ExportService.exportInvoices(invoices, format as ExportFormat);
+
+      if (!result.success) {
+        return res.status(500).json({
+          status: 'error',
+          message: result.error || 'Export failed',
+        });
+      }
+
+      res.setHeader('Content-Type', result.mimeType);
+      res.setHeader('Content-Disposition', `attachment; filename="${result.filename}"`);
+      res.send(result.buffer);
+    } catch (error: any) {
+      logger.error('Error exporting invoices:', error);
+      res.status(500).json({
         status: 'error',
         message: error.message,
       });

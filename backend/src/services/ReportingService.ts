@@ -144,7 +144,8 @@ class ReportingService {
       // Revenue by month
       const monthlyMap = new Map<string, { revenue: number; count: number }>();
       for (const invoice of invoices) {
-        const key = `${invoice.issueDate.getFullYear()}-${invoice.issueDate.getMonth() + 1}`;
+        const issueDate = new Date(invoice.issueDate);
+        const key = `${issueDate.getFullYear()}-${issueDate.getMonth() + 1}`;
         const existing = monthlyMap.get(key) || { revenue: 0, count: 0 };
         monthlyMap.set(key, {
           revenue: existing.revenue + Number(invoice.total),

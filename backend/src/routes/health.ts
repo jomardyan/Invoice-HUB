@@ -1,8 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { MonitoringService } from '@/services/MonitoringService';
 import logger from '@/utils/logger';
-import { getRepository } from 'typeorm';
-import { User } from '@/entities/User';
+import { AppDataSource } from '@/config/database';
 import redis from '@/config/redis';
 
 const router = Router();
@@ -12,7 +11,7 @@ const monitoring = MonitoringService.getInstance(logger);
  * GET /api/health
  * Basic health check - used by load balancers and deployment checks
  */
-router.get('/health', (_req: Request, res: Response) => {
+router.get('/', (_req: Request, res: Response) => {
   res.status(200).json({
     status: 'ok',
     timestamp: new Date().toISOString(),
@@ -23,7 +22,7 @@ router.get('/health', (_req: Request, res: Response) => {
  * GET /api/health/live
  * Kubernetes liveness probe - indicates if the process is still running
  */
-router.get('/health/live', (_req: Request, res: Response) => {
+router.get('/live', (_req: Request, res: Response) => {
   res.status(200).json({
     status: 'alive',
     timestamp: new Date().toISOString(),
@@ -34,11 +33,13 @@ router.get('/health/live', (_req: Request, res: Response) => {
  * GET /api/health/ready
  * Kubernetes readiness probe - indicates if the service is ready to handle traffic
  */
-router.get('/health/ready', async (_req: Request, res: Response) => {
+router.get('/ready', async (_req: Request, res: Response) => {
   try {
     // Check database connection
-    const userRepository = getRepository(User);
-    await userRepository.query('SELECT NOW()');
+    if (!AppDataSource.isInitialized) {
+      throw new Error('Database not initialized');
+    }
+    await AppDataSource.query('SELECT NOW()');
 
     // Check Redis connection
     const redisClient = redis.getInstance().getClient();
@@ -68,7 +69,7 @@ router.get('/health/ready', async (_req: Request, res: Response) => {
  * Detailed health check with metrics and performance data
  * Requires authentication
  */
-router.get('/health/detailed', async (_req: Request, res: Response) => {
+router.get('/detailed', async (_req: Request, res: Response) => {
   try {
     const health = monitoring.getHealthStatus();
 
@@ -92,7 +93,7 @@ router.get('/health/detailed', async (_req: Request, res: Response) => {
  * GET /api/health/metrics
  * Application metrics endpoint
  */
-router.get('/health/metrics', (_req: Request, res: Response) => {
+router.get('/metrics', (_req: Request, res: Response) => {
   try {
     const metrics = monitoring.getMetrics();
     const memoryUsage = process.memoryUsage();
@@ -129,7 +130,7 @@ router.get('/health/metrics', (_req: Request, res: Response) => {
  * POST /api/health/reset-metrics
  * Reset metrics (typically called during deployments or for testing)
  */
-router.post('/health/reset-metrics', (_req: Request, res: Response) => {
+router.post('/reset-metrics', (_req: Request, res: Response) => {
   try {
     monitoring.resetMetrics();
 
@@ -150,7 +151,7 @@ router.post('/health/reset-metrics', (_req: Request, res: Response) => {
  * GET /api/health/version
  * Application version information
  */
-router.get('/api/health/version', (_req: Request, res: Response) => {
+router.get('/version', (_req: Request, res: Response) => {
   const pkg = require('../../../package.json');
 
   res.status(200).json({

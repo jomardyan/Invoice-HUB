@@ -99,15 +99,12 @@ npm run dev              # Start dev server with hot reload
 npm run build            # Build TypeScript to JavaScript
 npm start                # Run production build
 
-# Code Quality
-npm run lint             # Run ESLint
-npm run lint:fix         # Fix ESLint errors
-npm run format           # Format code with Prettier
-
 # Testing
-npm test                 # Run tests with coverage
+npm test                 # Run unit tests with Jest
+npm run test:api         # Run full API integration test suite (auto-starts server)
+npm run test:quick       # Run quick smoke test (requires server running)
+npm run test:all         # Run all tests (unit + API)
 npm run test:watch       # Run tests in watch mode
-npm run test:integration # Run integration tests
 
 # Database
 npm run typeorm          # TypeORM CLI
@@ -115,6 +112,30 @@ npm run migration:generate -- -n MigrationName
 npm run migration:run    # Run migrations
 npm run migration:revert # Revert last migration
 ```
+
+## Testing Workflow
+
+See [TESTING.md](./TESTING.md) for detailed documentation.
+
+### After Making Changes
+
+```bash
+# Run full automated test suite
+npm run test:api
+```
+
+### During Development
+
+```bash
+# Terminal 1: Start server
+./start-server.sh
+# OR
+npm run dev
+
+# Terminal 2: Run quick smoke tests (repeat as needed)
+npm run test:quick
+```
+
 
 ## Project Structure
 

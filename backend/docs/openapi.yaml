@@ -1,0 +1,879 @@
+openapi: 3.0.0
+info:
+  title: Invoice-HUB API
+  version: 1.0.0
+  description: |
+    Complete invoicing platform with multi-tenant support, automated workflows, and marketplace integrations.
+    
+    ## Features
+    - 🔐 Multi-tenant architecture with JWT authentication
+    - 📊 Complete invoice lifecycle management
+    - 🏪 Allegro marketplace integration
+    - 📧 Multi-channel notifications (Email, SMS, In-app)
+    - 📤 Multiple export formats (PDF, Excel, XML, JSON)
+    - 🇵🇱 Polish VAT compliance (JPK_FA, VAT-7, VAT-UE)
+    - 🔒 Enterprise-grade security
+    
+    ## Authentication
+    Most endpoints require authentication using JWT Bearer tokens.
+    Include the token in the Authorization header:
+    ```
+    Authorization: Bearer <your_access_token>
+    ```
+    
+  contact:
+    name: Invoice-HUB Support
+    email: support@invoice-hub.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:3000/api/v1
+    description: Development server
+  - url: https://api.invoice-hub.com/api/v1
+    description: Production server
+
+tags:
+  - name: Authentication
+    description: User authentication and authorization
+  - name: Health
+    description: Health checks and monitoring
+  - name: Companies
+    description: Seller company management
+  - name: Customers
+    description: Buyer/customer management
+  - name: Products
+    description: Product catalog management
+  - name: Invoices
+    description: Invoice lifecycle and operations
+  - name: Payments
+    description: Payment tracking and management
+  - name: Templates
+    description: Invoice and email templates
+  - name: Notifications
+    description: In-app notifications
+  - name: Reports
+    description: Business intelligence and analytics
+  - name: Webhooks
+    description: Webhook subscriptions and events
+  - name: Scheduler
+    description: Automated tasks and jobs
+  - name: Allegro
+    description: Allegro marketplace integration
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT access token obtained from /auth/login or /auth/register
+
+  schemas:
+    # Common schemas
+    Error:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [error]
+        statusCode:
+          type: integer
+        message:
+          type: string
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 50
+        total:
+          type: integer
+          example: 150
+        pages:
+          type: integer
+          example: 3
+
+    # Entity schemas
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+            enum: [owner, admin, manager, accountant, viewer]
+        tenantId:
+          type: string
+          format: uuid
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Tenant:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        subdomain:
+          type: string
+        settings:
+          type: object
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Company:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        nip:
+          type: string
+          description: Tax identification number (NIP)
+        vatEu:
+          type: string
+          nullable: true
+        address:
+          type: string
+        postalCode:
+          type: string
+        city:
+          type: string
+        country:
+          type: string
+          default: PL
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        website:
+          type: string
+          nullable: true
+        bankName:
+          type: string
+          nullable: true
+        bankAccount:
+          type: string
+        swift:
+          type: string
+          nullable: true
+        logoUrl:
+          type: string
+          nullable: true
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Customer:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [business, individual]
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        nip:
+          type: string
+          nullable: true
+        vatEu:
+          type: string
+          nullable: true
+        billingAddress:
+          type: string
+        billingPostalCode:
+          type: string
+        billingCity:
+          type: string
+        billingCountry:
+          type: string
+          default: PL
+        shippingAddress:
+          type: string
+          nullable: true
+        shippingPostalCode:
+          type: string
+          nullable: true
+        shippingCity:
+          type: string
+          nullable: true
+        shippingCountry:
+          type: string
+          nullable: true
+        creditLimit:
+          type: number
+          format: decimal
+        paymentTermDays:
+          type: integer
+          default: 30
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Product:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        sku:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        price:
+          type: number
+          format: decimal
+        currency:
+          type: string
+          default: PLN
+        vatRate:
+          type: number
+          format: decimal
+        unit:
+          type: string
+          default: pcs
+        imageUrl:
+          type: string
+          nullable: true
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Invoice:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        companyId:
+          type: string
+          format: uuid
+        customerId:
+          type: string
+          format: uuid
+        createdById:
+          type: string
+          format: uuid
+        invoiceNumber:
+          type: string
+        series:
+          type: string
+          nullable: true
+        type:
+          type: string
+          enum: [standard, proforma, corrective, advance, final]
+        status:
+          type: string
+          enum: [draft, pending, approved, sent, viewed, paid, overdue, cancelled]
+        issueDate:
+          type: string
+          format: date
+        saleDate:
+          type: string
+          format: date
+          nullable: true
+        dueDate:
+          type: string
+          format: date
+        paymentTermDays:
+          type: integer
+        currency:
+          type: string
+          default: PLN
+        subtotal:
+          type: number
+          format: decimal
+        taxAmount:
+          type: number
+          format: decimal
+        discountAmount:
+          type: number
+          format: decimal
+        total:
+          type: number
+          format: decimal
+        notes:
+          type: string
+        termsAndConditions:
+          type: string
+        pdfUrl:
+          type: string
+          nullable: true
+        sentAt:
+          type: string
+          format: date-time
+          nullable: true
+        viewedAt:
+          type: string
+          format: date-time
+          nullable: true
+        paidAt:
+          type: string
+          format: date-time
+          nullable: true
+        cancelReason:
+          type: string
+          nullable: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/InvoiceItem'
+        company:
+          $ref: '#/components/schemas/Company'
+        customer:
+          $ref: '#/components/schemas/Customer'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    InvoiceItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        invoiceId:
+          type: string
+          format: uuid
+        productId:
+          type: string
+          format: uuid
+          nullable: true
+        sku:
+          type: string
+          nullable: true
+        description:
+          type: string
+        quantity:
+          type: number
+          format: decimal
+        unit:
+          type: string
+        unitPrice:
+          type: number
+          format: decimal
+        vatRate:
+          type: number
+          format: decimal
+        discountPercent:
+          type: number
+          format: decimal
+          default: 0
+        netAmount:
+          type: number
+          format: decimal
+        taxAmount:
+          type: number
+          format: decimal
+        grossAmount:
+          type: number
+          format: decimal
+        lineNumber:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Payment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        invoiceId:
+          type: string
+          format: uuid
+        amount:
+          type: number
+          format: decimal
+        currency:
+          type: string
+        method:
+          type: string
+          enum: [bank_transfer, card, cash, paypal, stripe]
+        transactionId:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [pending, completed, failed, refunded]
+        paidAt:
+          type: string
+          format: date-time
+        notes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Template:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+          enum: [invoice, email, sms]
+        subject:
+          type: string
+        body:
+          type: string
+        variables:
+          type: array
+          items:
+            type: string
+        isDefault:
+          type: boolean
+        settings:
+          type: object
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Webhook:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        url:
+          type: string
+          format: uri
+        events:
+          type: array
+          items:
+            type: string
+            enum:
+              - invoice.created
+              - invoice.updated
+              - invoice.sent
+              - invoice.viewed
+              - invoice.paid
+              - invoice.overdue
+              - invoice.cancelled
+              - customer.created
+              - customer.updated
+              - payment.received
+              - payment.failed
+        status:
+          type: string
+          enum: [active, inactive, suspended]
+        secret:
+          type: string
+        description:
+          type: string
+          nullable: true
+        successCount:
+          type: integer
+        failureCount:
+          type: integer
+        lastTriggeredAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+security:
+  - BearerAuth: []
+
+paths:
+  # Authentication endpoints
+  /auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Register new user
+      description: Create a new user account and tenant
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+                - name
+                - companyName
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 8
+                name:
+                  type: string
+                companyName:
+                  type: string
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        $ref: '#/components/schemas/User'
+                      tenant:
+                        $ref: '#/components/schemas/Tenant'
+                      tokens:
+                        type: object
+                        properties:
+                          accessToken:
+                            type: string
+                          refreshToken:
+                            type: string
+                          expiresIn:
+                            type: integer
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: User login
+      description: Authenticate user and get access tokens
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        $ref: '#/components/schemas/User'
+                      tokens:
+                        type: object
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # Health endpoints
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Basic health check
+      description: Returns basic health status
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /health/live:
+    get:
+      tags:
+        - Health
+      summary: Liveness probe
+      description: Kubernetes liveness probe
+      security: []
+      responses:
+        '200':
+          description: Service is alive
+
+  /health/ready:
+    get:
+      tags:
+        - Health
+      summary: Readiness probe
+      description: Checks database and Redis connectivity
+      security: []
+      responses:
+        '200':
+          description: Service is ready
+        '503':
+          description: Service not ready
+
+  # Companies
+  /{tenantId}/companies:
+    parameters:
+      - name: tenantId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    
+    get:
+      tags:
+        - Companies
+      summary: List companies
+      description: Get all companies for the tenant
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Companies retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Company'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+    
+    post:
+      tags:
+        - Companies
+      summary: Create company
+      description: Create a new company
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - nip
+                - address
+                - city
+                - postalCode
+                - country
+              properties:
+                name:
+                  type: string
+                nip:
+                  type: string
+                address:
+                  type: string
+                city:
+                  type: string
+                postalCode:
+                  type: string
+                country:
+                  type: string
+                email:
+                  type: string
+                phone:
+                  type: string
+                bankAccount:
+                  type: string
+      responses:
+        '201':
+          description: Company created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/Company'
+
+  /{tenantId}/companies/{id}:
+    parameters:
+      - name: tenantId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    
+    get:
+      tags:
+        - Companies
+      summary: Get company by ID
+      responses:
+        '200':
+          description: Company found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/Company'
+        '404':
+          description: Company not found
+
+  # Similar patterns for Customers, Products, Invoices, etc.
+  # (truncated for brevity - full spec would include all endpoints)

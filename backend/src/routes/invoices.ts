@@ -54,7 +54,10 @@ router.post(
       }
 
       const { tenantId } = req.params;
-      const input: InvoiceCreateInput = req.body;
+      const input: InvoiceCreateInput = {
+        ...req.body,
+        createdById: req.user?.id,
+      };
 
       const invoice = await invoiceService.createInvoice(tenantId, input);
 

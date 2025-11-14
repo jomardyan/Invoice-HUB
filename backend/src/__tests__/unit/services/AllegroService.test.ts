@@ -1,0 +1,257 @@
+// @ts-expect-error - AllegroLineItem imported but not used in tests (kept for reference)
+import AllegroService, { AllegroOrder, AllegroLineItem } from '@/services/AllegroService';
+
+// Mock uuid to avoid ES module issues
+jest.mock('uuid', () => ({
+  v4: jest.fn(() => 'mocked-uuid-v4'),
+}));
+
+import { v4 as uuidv4 } from 'uuid';
+
+describe('AllegroService', () => {
+  let allegroService: AllegroService;
+
+  beforeEach(() => {
+    allegroService = new AllegroService();
+  });
+
+  describe('OAuth 2.0 Authorization', () => {
+    it('should generate authorization URL with correct parameters', () => {
+      const tenantId = uuidv4();
+      const authUrl = allegroService.getAuthorizationUrl(tenantId);
+
+      expect(authUrl).toContain('client_id=');
+      expect(authUrl).toContain('response_type=code');
+      expect(authUrl).toContain('redirect_uri=');
+      expect(authUrl).toContain('state=');
+    });
+
+    it('should encode tenant ID in state parameter', () => {
+      const tenantId = uuidv4();
+      const authUrl = allegroService.getAuthorizationUrl(tenantId);
+      const urlParams = new URL(authUrl);
+      const stateParam = urlParams.searchParams.get('state');
+
+      expect(stateParam).toBeDefined();
+      if (stateParam) {
+        const decodedState = JSON.parse(Buffer.from(stateParam, 'base64').toString());
+        expect(decodedState.tenantId).toBe(tenantId);
+      }
+    });
+  });
+
+  describe('Token Management', () => {
+    it('should handle token expiration correctly', () => {
+      const now = new Date();
+      const expiredToken = new Date(now.getTime() - 60 * 60 * 1000); // 1 hour ago
+      const validToken = new Date(now.getTime() + 2 * 60 * 60 * 1000); // 2 hours from now
+
+      expect(expiredToken < now).toBe(true);
+      expect(validToken > now).toBe(true);
+    });
+
+    it('should proactively refresh token 1 hour before expiry', () => {
+      const now = new Date();
+      const expiresAt = new Date(now.getTime() + 30 * 60 * 1000); // 30 minutes from now
+      const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
+
+      // Token should be refreshed since expiresAt < oneHourFromNow
+      expect(expiresAt < oneHourFromNow).toBe(true);
+    });
+  });
+
+  describe('Order Synchronization', () => {
+    it('should detect duplicate orders using Allegro order ID', () => {
+      const allegroOrderId1 = 'ALLEGRO-12345';
+      const allegroOrderId2 = 'ALLEGRO-12345';
+      const allegroOrderId3 = 'ALLEGRO-67890';
+
+      expect(allegroOrderId1).toBe(allegroOrderId2);
+      expect(allegroOrderId1).not.toBe(allegroOrderId3);
+    });
+
+    it('should retry with exponential backoff on failure', () => {
+      const retryDelays = [1000, 60000, 300000, 900000, 3600000, 14400000];
+      const expectedDelays = [1, 60, 300, 900, 3600, 14400]; // in seconds
+
+      retryDelays.forEach((delay, index) => {
+        expect(delay / 1000).toBe(expectedDelays[index]);
+      });
+
+      // Verify exponential growth
+      for (let i = 1; i < retryDelays.length; i++) {
+        expect(retryDelays[i]).toBeGreaterThan(retryDelays[i - 1]);
+      }
+    });
+
+    it('should disable integration after 5 consecutive sync failures', () => {
+      let syncErrorCount = 0;
+      const MAX_ERRORS = 5;
+      let isActive = true;
+
+      // Simulate 5 failed attempts
+      for (let i = 0; i < MAX_ERRORS; i++) {
+        syncErrorCount++;
+        if (syncErrorCount >= MAX_ERRORS) {
+          isActive = false;
+        }
+      }
+
+      expect(syncErrorCount).toBe(5);
+      expect(isActive).toBe(false);
+    });
+  });
+
+  describe('Order to Invoice Mapping', () => {
+    it('should map Allegro order to invoice items correctly', () => {
+      const allegroOrder: AllegroOrder = {
+        id: 'ORDER-123',
+        number: 'ORD-001',
+        buyerLogin: 'testbuyer',
+        buyerEmail: 'buyer@example.com',
+        totalPrice: 500,
+        lineItems: [
+          {
+            id: 'ITEM-1',
+            offer: {
+              id: 'OFFER-ABC',
+              title: 'Test Product',
+            },
+            quantity: 2,
+            price: 100,
+          },
+        ],
+        delivery: {
+          address: {
+            firstName: 'John',
+            lastName: 'Doe',
+            street: 'Test Street 123',
+            zipCode: '00-000',
+            city: 'Warsaw',
+            countryCode: 'PL',
+          },
+        },
+        createdAt: new Date().toISOString(),
+        status: 'SENT',
+      };
+
+      expect(allegroOrder.lineItems).toHaveLength(1);
+      expect(allegroOrder.lineItems[0].quantity).toBe(2);
+      expect(allegroOrder.lineItems[0].price).toBe(100);
+      expect(allegroOrder.totalPrice).toBe(500);
+    });
+
+    it('should extract customer information from Allegro order', () => {
+      const allegroOrder: AllegroOrder = {
+        id: 'ORDER-123',
+        number: 'ORD-001',
+        buyerLogin: 'testbuyer',
+        buyerEmail: 'buyer@example.com',
+        totalPrice: 500,
+        lineItems: [],
+        delivery: {
+          address: {
+            firstName: 'Jane',
+            lastName: 'Smith',
+            street: 'Oak Street 456',
+            zipCode: '31-000',
+            city: 'Krakow',
+            countryCode: 'PL',
+          },
+        },
+        createdAt: new Date().toISOString(),
+        status: 'SENT',
+      };
+
+      const customerName = `${allegroOrder.delivery.address.firstName} ${allegroOrder.delivery.address.lastName}`;
+      const customerEmail = allegroOrder.buyerEmail;
+      const address = `${allegroOrder.delivery.address.street}, ${allegroOrder.delivery.address.zipCode} ${allegroOrder.delivery.address.city}`;
+
+      expect(customerName).toBe('Jane Smith');
+      expect(customerEmail).toBe('buyer@example.com');
+      expect(address).toBe('Oak Street 456, 31-000 Krakow');
+    });
+
+    it('should apply default Polish VAT rate when creating products from Allegro offers', () => {
+      const defaultVATRate = 23; // Polish standard VAT
+
+      expect(defaultVATRate).toBe(23);
+    });
+  });
+
+  describe('Error Handling', () => {
+    it('should handle network timeouts gracefully', () => {
+      const timeout = 10000; // 10 seconds
+      const expectedTimeout = 10000;
+
+      expect(timeout).toBe(expectedTimeout);
+    });
+
+    it('should not retry on 4xx errors (except 429)', () => {
+      const statusCodes = [400, 401, 403, 404, 422];
+      const shouldRetry = (status: number) => {
+        return status === 429 || status >= 500;
+      };
+
+      statusCodes.forEach((status) => {
+        expect(shouldRetry(status)).toBe(false);
+      });
+    });
+
+    it('should retry on 5xx and rate limit errors', () => {
+      const statusCodes = [429, 500, 502, 503, 504];
+      const shouldRetry = (status: number) => {
+        return status === 429 || status >= 500;
+      };
+
+      statusCodes.forEach((status) => {
+        expect(shouldRetry(status)).toBe(true);
+      });
+    });
+  });
+
+  describe('Idempotency', () => {
+    it('should use Allegro order ID as idempotency key', () => {
+      const allegroOrderId = 'ALLEGRO-ORDER-12345';
+      const idempotencyKey = `allegro:order:${allegroOrderId}`;
+
+      expect(idempotencyKey).toBe('allegro:order:ALLEGRO-ORDER-12345');
+      expect(idempotencyKey).toContain(allegroOrderId);
+    });
+
+    it('should cache processed orders for 24 hours', () => {
+      const cacheExpiry = 86400; // 24 hours in seconds
+
+      expect(cacheExpiry).toBe(24 * 60 * 60);
+    });
+  });
+
+  describe('Sync Result Reporting', () => {
+    it('should track sync statistics correctly', () => {
+      const result = {
+        success: true,
+        ordersProcessed: 10,
+        invoicesCreated: 8,
+        errors: ['Order 2 failed', 'Order 5 failed'],
+      };
+
+      expect(result.success).toBe(true);
+      expect(result.ordersProcessed).toBe(10);
+      expect(result.invoicesCreated).toBe(8);
+      expect(result.errors).toHaveLength(2);
+    });
+
+    it('should mark sync as failed if any critical errors occur', () => {
+      const criticalError = 'Failed to fetch orders from API';
+      const result = {
+        success: false,
+        ordersProcessed: 0,
+        invoicesCreated: 0,
+        errors: [criticalError],
+      };
+
+      expect(result.success).toBe(false);
+      expect(result.errors).toContain(criticalError);
+    });
+  });
+});

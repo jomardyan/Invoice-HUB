@@ -613,6 +613,181 @@ class ExportService {
       throw error;
     }
   }
+
+  /**
+   * Export generic data to Excel (for reports)
+   */
+  async exportDataToExcel(data: any): Promise<Buffer> {
+    try {
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Report');
+
+      // Add title
+      worksheet.addRow([data.title || 'Report']);
+      worksheet.getRow(1).font = { bold: true, size: 16 };
+      
+      if (data.period) {
+        worksheet.addRow([`Period: ${data.period}`]);
+      }
+      
+      worksheet.addRow([]); // Empty row
+
+      // Convert data to rows
+      const reportData = data.data;
+      if (Array.isArray(reportData)) {
+        // Array of objects - create table
+        if (reportData.length > 0) {
+          const headers = Object.keys(reportData[0]);
+          worksheet.addRow(headers);
+          const headerRow = worksheet.lastRow;
+          if (headerRow) {
+            headerRow.font = { bold: true };
+            headerRow.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFE0E0E0' },
+            };
+          }
+
+          reportData.forEach((item: any) => {
+            const values = headers.map(h => item[h]);
+            worksheet.addRow(values);
+          });
+        }
+      } else if (typeof reportData === 'object') {
+        // Object - create key-value pairs
+        Object.entries(reportData).forEach(([key, value]) => {
+          if (Array.isArray(value)) {
+            worksheet.addRow([key]);
+            if (value.length > 0 && typeof value[0] === 'object') {
+              const headers = Object.keys(value[0]);
+              worksheet.addRow(['', ...headers]);
+              value.forEach((item: any) => {
+                const values = headers.map(h => item[h]);
+                worksheet.addRow(['', ...values]);
+              });
+            }
+          } else if (typeof value === 'object' && value !== null) {
+            worksheet.addRow([key]);
+            Object.entries(value).forEach(([subKey, subValue]) => {
+              worksheet.addRow(['', subKey, subValue]);
+            });
+          } else {
+            worksheet.addRow([key, value]);
+          }
+        });
+      }
+
+      // Auto-fit columns
+      worksheet.columns.forEach((column: any) => {
+        let maxLength = 0;
+        column.eachCell?.({ includeEmpty: false }, (cell: any) => {
+          const cellValue = cell.value?.toString() || '';
+          maxLength = Math.max(maxLength, cellValue.length);
+        });
+        column.width = Math.min(Math.max(maxLength + 2, 10), 50);
+      });
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      logger.info('Data exported to Excel');
+      return Buffer.from(buffer);
+    } catch (error: any) {
+      logger.error('Excel data export failed', { error: error.message });
+      throw error;
+    }
+  }
+
+  /**
+   * Export generic data to CSV (for reports)
+   */
+  async exportDataToCSV(data: any): Promise<Buffer> {
+    try {
+      const rows: string[][] = [];
+      
+      // Add title
+      rows.push([data.title || 'Report']);
+      if (data.period) {
+        rows.push([`Period: ${data.period}`]);
+      }
+      rows.push([]); // Empty row
+
+      const reportData = data.data;
+      if (Array.isArray(reportData) && reportData.length > 0) {
+        // Array of objects
+        const headers = Object.keys(reportData[0]);
+        rows.push(headers);
+        
+        reportData.forEach((item: any) => {
+          const values = headers.map(h => String(item[h] || ''));
+          rows.push(values);
+        });
+      } else if (typeof reportData === 'object') {
+        // Object - key-value pairs
+        Object.entries(reportData).forEach(([key, value]) => {
+          if (Array.isArray(value) && value.length > 0 && typeof value[0] === 'object') {
+            rows.push([key]);
+            const headers = Object.keys(value[0]);
+            rows.push(['', ...headers]);
+            value.forEach((item: any) => {
+              const values = headers.map(h => String(item[h] || ''));
+              rows.push(['', ...values]);
+            });
+          } else {
+            rows.push([key, String(value)]);
+          }
+        });
+      }
+
+      const csv = rows.map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+      const buffer = Buffer.from(csv, 'utf-8');
+      
+      logger.info('Data exported to CSV');
+      return buffer;
+    } catch (error: any) {
+      logger.error('CSV data export failed', { error: error.message });
+      throw error;
+    }
+  }
+
+  /**
+   * Export tax report to XML (JPK_VAT format)
+   */
+  exportTaxReportToXML(report: any): string {
+    try {
+      let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+      xml += '<TaxReport>\n';
+      xml += `  <Period>\n`;
+      xml += `    <StartDate>${report.period.startDate.toISOString().split('T')[0]}</StartDate>\n`;
+      xml += `    <EndDate>${report.period.endDate.toISOString().split('T')[0]}</EndDate>\n`;
+      xml += `  </Period>\n`;
+      xml += `  <Summary>\n`;
+      xml += `    <TotalNetAmount>${report.totalNetAmount.toFixed(2)}</TotalNetAmount>\n`;
+      xml += `    <TotalTaxAmount>${report.totalTaxAmount.toFixed(2)}</TotalTaxAmount>\n`;
+      xml += `    <TotalGrossAmount>${report.totalGrossAmount.toFixed(2)}</TotalGrossAmount>\n`;
+      xml += `    <InvoiceCount>${report.invoiceCount}</InvoiceCount>\n`;
+      xml += `  </Summary>\n`;
+      xml += `  <TaxRateBreakdown>\n`;
+      
+      for (const rate of report.taxByRate) {
+        xml += `    <Rate>\n`;
+        xml += `      <VATRate>${rate.vatRate}</VATRate>\n`;
+        xml += `      <NetAmount>${rate.netAmount.toFixed(2)}</NetAmount>\n`;
+        xml += `      <TaxAmount>${rate.taxAmount.toFixed(2)}</TaxAmount>\n`;
+        xml += `      <GrossAmount>${rate.grossAmount.toFixed(2)}</GrossAmount>\n`;
+        xml += `      <InvoiceCount>${rate.invoiceCount}</InvoiceCount>\n`;
+        xml += `    </Rate>\n`;
+      }
+      
+      xml += `  </TaxRateBreakdown>\n`;
+      xml += '</TaxReport>';
+
+      logger.info('Tax report exported to XML');
+      return xml;
+    } catch (error: any) {
+      logger.error('XML tax report export failed', { error: error.message });
+      throw error;
+    }
+  }
 }
 
 // Export singleton instance

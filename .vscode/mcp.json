@@ -5,6 +5,12 @@
 			"url": "https://mcp.nuxt.com/sse",
 			"gallery": "https://api.mcp.github.com",
 			"version": "1.0.0"
+		},
+		"stripe/agent-toolkit": {
+			"type": "http",
+			"url": "https://mcp.stripe.com",
+			"gallery": "https://api.mcp.github.com",
+			"version": "1.0.0"
 		}
 	},
 	"inputs": []

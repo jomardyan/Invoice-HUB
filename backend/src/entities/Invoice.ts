@@ -149,6 +149,9 @@ export class Invoice {
   @Column({ type: 'jsonb', nullable: true })
   metadata: Record<string, any>;
 
+  @Column({ length: 100, nullable: true, unique: false, comment: 'External system order ID (e.g., Allegro order ID)' })
+  externalOrderId: string;
+
   @OneToMany(() => InvoiceItem, (item) => item.invoice, { cascade: true })
   items: InvoiceItem[];
 

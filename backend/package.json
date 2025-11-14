@@ -10,13 +10,17 @@
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
     "format": "prettier --write \"src/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\"",
     "test": "jest --coverage",
     "test:watch": "jest --watch",
     "test:integration": "jest --config jest.integration.config.js",
     "typeorm": "typeorm-ts-node-commonjs",
     "migration:generate": "npm run typeorm -- migration:generate",
     "migration:run": "npm run typeorm -- migration:run",
-    "migration:revert": "npm run typeorm -- migration:revert"
+    "migration:revert": "npm run typeorm -- migration:revert",
+    "migrate": "npm run migration:run",
+    "backup": "echo 'Database backup would be performed here'",
+    "restore": "echo 'Database restore would be performed here'"
   },
   "keywords": [
     "invoice",
@@ -29,6 +33,11 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@sentry/node": "^10.25.0",
+    "@sentry/profiling-node": "^10.25.0",
+    "@types/stripe": "^8.0.417",
+    "@types/swagger-jsdoc": "^6.0.4",
+    "@types/swagger-ui-express": "^4.1.8",
     "axios": "latest",
     "bcryptjs": "latest",
     "bullmq": "latest",
@@ -53,6 +62,9 @@
     "puppeteer": "latest",
     "qrcode": "latest",
     "redis": "latest",
+    "stripe": "^19.3.1",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
     "typeorm": "latest",
     "uuid": "latest",
     "winston": "latest",
@@ -80,6 +92,7 @@
     "supertest": "latest",
     "ts-jest": "latest",
     "ts-node": "latest",
+    "tsconfig-paths": "^4.2.0",
     "typescript": "latest"
   },
   "engines": {

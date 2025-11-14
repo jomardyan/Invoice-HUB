@@ -80,6 +80,12 @@ export class Customer {
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   creditLimit: number;
 
+  @Column({ type: 'uuid', nullable: true })
+  companyId: string;
+
+  @Column({ length: 100, nullable: true, unique: false, comment: 'External system ID (e.g., Allegro buyer login)' })
+  externalOrderId: string;
+
   @Column({ type: 'int', default: 30, comment: 'Payment terms in days' })
   paymentTermDays: number;
 

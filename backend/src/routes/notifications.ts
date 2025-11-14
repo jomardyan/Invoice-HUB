@@ -7,8 +7,14 @@ import { Router, Request, Response } from 'express';
 import { param, body, query } from 'express-validator';
 import logger from '@/utils/logger';
 import NotificationService, { NotificationType } from '@/services/NotificationService';
+import { authMiddleware, requireTenant } from '@/middleware/auth';
+import { AuthenticatedRequest } from '@/types';
 
 const router: Router = Router();
+
+// All routes require authentication
+router.use(authMiddleware);
+router.use(requireTenant);
 
 // GET: Get user notifications
 router.get(
@@ -19,9 +25,8 @@ router.get(
   async (req: Request, res: Response): Promise<void> => {
     try {
       const { unreadOnly, type, limit } = req.query;
-      
-      // TODO: Get userId from authenticated user
-      const userId = 'user-id-from-auth';
+      const authReq = req as AuthenticatedRequest;
+      const userId = authReq.user!.id;
 
       const notifications = await NotificationService.getUserNotifications(userId, {
         unreadOnly: unreadOnly === 'true',
@@ -46,10 +51,10 @@ router.get(
 // GET: Get notification statistics
 router.get(
   '/:tenantId/notifications/stats',
-  async (_req: Request, res: Response): Promise<void> => {
+  async (req: Request, res: Response): Promise<void> => {
     try {
-      // TODO: Get userId from authenticated user
-      const userId = 'user-id-from-auth';
+      const authReq = req as AuthenticatedRequest;
+      const userId = authReq.user!.id;
 
       const stats = await NotificationService.getStatistics(userId);
 
@@ -74,8 +79,8 @@ router.put(
   async (req: Request, res: Response): Promise<void> => {
     try {
       const { notificationId } = req.params;
-      // TODO: Get userId from authenticated user
-      const userId = 'user-id-from-auth';
+      const authReq = req as AuthenticatedRequest;
+      const userId = authReq.user!.id;
 
       await NotificationService.markAsRead(notificationId, userId);
 
@@ -96,10 +101,10 @@ router.put(
 // PUT: Mark all notifications as read
 router.put(
   '/:tenantId/notifications/mark-all-read',
-  async (_req: Request, res: Response): Promise<void> => {
+  async (req: Request, res: Response): Promise<void> => {
     try {
-      // TODO: Get userId from authenticated user
-      const userId = 'user-id-from-auth';
+      const authReq = req as AuthenticatedRequest;
+      const userId = authReq.user!.id;
 
       const count = await NotificationService.markAllAsRead(userId);
 
@@ -125,8 +130,8 @@ router.delete(
   async (req: Request, res: Response): Promise<void> => {
     try {
       const { notificationId } = req.params;
-      // TODO: Get userId from authenticated user
-      const userId = 'user-id-from-auth';
+      const authReq = req as AuthenticatedRequest;
+      const userId = authReq.user!.id;
 
       await NotificationService.deleteNotification(notificationId, userId);
 
@@ -147,10 +152,10 @@ router.delete(
 // GET: Get notification preferences
 router.get(
   '/:tenantId/notifications/preferences',
-  async (_req: Request, res: Response): Promise<void> => {
+  async (req: Request, res: Response): Promise<void> => {
     try {
-      // TODO: Get userId from authenticated user
-      const userId = 'user-id-from-auth';
+      const authReq = req as AuthenticatedRequest;
+      const userId = authReq.user!.id;
 
       const preferences = await NotificationService.getUserPreferences(userId);
 
@@ -176,8 +181,8 @@ router.put(
   body('quietHours').optional().isObject(),
   async (req: Request, res: Response): Promise<void> => {
     try {
-      // TODO: Get userId from authenticated user
-      const userId = 'user-id-from-auth';
+      const authReq = req as AuthenticatedRequest;
+      const userId = authReq.user!.id;
       const updates = req.body;
 
       const preferences = await NotificationService.updateUserPreferences(userId, updates);

@@ -3,9 +3,20 @@ module.exports = {
   testEnvironment: 'node',
   roots: ['<rootDir>/src'],
   testMatch: ['**/__tests__/**/*.ts', '**/?(*.)+(spec|test).ts'],
+  globals: {
+    'ts-jest': {
+      useESM: true,
+      tsconfig: {
+        esModuleInterop: true,
+        allowSyntheticDefaultImports: true,
+      },
+    },
+  },
   transform: {
     '^.+\\.ts$': 'ts-jest',
   },
+  extensionsToTreatAsEsm: ['.ts'],
+  transformIgnorePatterns: [],
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/**/*.d.ts',
@@ -23,6 +34,7 @@ module.exports = {
     },
   },
   moduleNameMapper: {
+    '^uuid$': require.resolve('uuid'),
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@config/(.*)$': '<rootDir>/src/config/$1',
     '^@entities/(.*)$': '<rootDir>/src/entities/$1',

@@ -8,12 +8,15 @@ import { TaxCalculationService } from './TaxCalculationService';
 import EmailService from './EmailService';
 import SMSService from './SMSService';
 import NotificationService, { NotificationType, NotificationPriority } from './NotificationService';
+import WebhookService from './WebhookService';
+import { WebhookEvent } from '@/entities/Webhook';
 import logger from '@/utils/logger';
 import { v4 as uuidv4 } from 'uuid';
 
 export interface InvoiceCreateInput {
   companyId: string;
   customerId: string;
+  createdById?: string;
   invoiceType: InvoiceType;
   issueDate: Date;
   dueDate: Date;
@@ -90,7 +93,7 @@ export class InvoiceService {
       invoice.tenantId = tenantId;
       invoice.companyId = input.companyId;
       invoice.customerId = input.customerId;
-      invoice.createdById = tenantId; // Will be updated with actual user ID from auth context
+      invoice.createdById = input.createdById || tenantId;
       invoice.invoiceNumber = invoiceNumber;
       invoice.type = input.invoiceType;
       invoice.status = InvoiceStatus.DRAFT;
@@ -139,6 +142,15 @@ export class InvoiceService {
 
       const saved = await this.invoiceRepository.save(invoice);
       logger.info(`Invoice created: ${invoiceNumber}`, { tenantId, invoiceId: saved.id });
+
+      // Trigger webhook
+      WebhookService.triggerEvent(tenantId, WebhookEvent.INVOICE_CREATED, {
+        invoiceId: saved.id,
+        invoiceNumber: saved.invoiceNumber,
+        customerId: saved.customerId,
+        total: saved.total,
+        status: saved.status,
+      }).catch((err) => logger.error('Webhook trigger failed', { error: err.message }));
 
       return saved;
     } catch (error) {
@@ -416,6 +428,15 @@ export class InvoiceService {
         logger.error(`Failed to create notification: ${invoice.invoiceNumber}`, { error: notifError.message });
       }
 
+      // Trigger webhook
+      WebhookService.triggerEvent(tenantId, WebhookEvent.INVOICE_SENT, {
+        invoiceId: saved.id,
+        invoiceNumber: saved.invoiceNumber,
+        customerId: saved.customerId,
+        total: saved.total,
+        sentAt: saved.sentAt,
+      }).catch((err) => logger.error('Webhook trigger failed', { error: err.message }));
+
       return saved;
     } catch (error) {
       logger.error('Error marking invoice as sent:', error);
@@ -523,6 +544,16 @@ export class InvoiceService {
         } catch (notifError: any) {
           logger.error(`Failed to create payment notification: ${invoice.invoiceNumber}`, { error: notifError.message });
         }
+
+        // Trigger webhook for payment received
+        WebhookService.triggerEvent(tenantId, WebhookEvent.INVOICE_PAID, {
+          invoiceId: saved.id,
+          invoiceNumber: saved.invoiceNumber,
+          customerId: saved.customerId,
+          total: saved.total,
+          paidAt: saved.paidAt,
+          paidAmount: newPaidAmount,
+        }).catch((err) => logger.error('Webhook trigger failed', { error: err.message }));
       }
 
       return saved;

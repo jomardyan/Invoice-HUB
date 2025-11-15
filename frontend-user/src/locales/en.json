@@ -1,0 +1,80 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "search": "Search",
+    "filter": "Filter",
+    "export": "Export",
+    "import": "Import",
+    "print": "Print",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "yes": "Yes",
+    "no": "No",
+    "actions": "Actions"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "register": "Register",
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forgot Password?",
+    "welcomeBack": "Welcome back",
+    "signInToContinue": "Sign in to continue"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "revenue": "Revenue",
+    "invoices": "Invoices",
+    "customers": "Customers",
+    "products": "Products",
+    "outstanding": "Outstanding",
+    "overdue": "Overdue",
+    "thisMonth": "This Month",
+    "lastMonth": "Last Month"
+  },
+  "invoice": {
+    "invoice": "Invoice",
+    "invoices": "Invoices",
+    "createInvoice": "Create Invoice",
+    "editInvoice": "Edit Invoice",
+    "invoiceNumber": "Invoice Number",
+    "issueDate": "Issue Date",
+    "dueDate": "Due Date",
+    "total": "Total",
+    "status": "Status",
+    "draft": "Draft",
+    "sent": "Sent",
+    "paid": "Paid",
+    "overdue": "Overdue",
+    "cancelled": "Cancelled"
+  },
+  "customer": {
+    "customer": "Customer",
+    "customers": "Customers",
+    "addCustomer": "Add Customer",
+    "customerName": "Customer Name",
+    "nip": "NIP (Tax ID)",
+    "email": "Email",
+    "phone": "Phone"
+  },
+  "payment": {
+    "payment": "Payment",
+    "payments": "Payments",
+    "recordPayment": "Record Payment",
+    "paymentDate": "Payment Date",
+    "paymentMethod": "Payment Method",
+    "amount": "Amount",
+    "reference": "Reference Number",
+    "bankTransfer": "Bank Transfer",
+    "cash": "Cash",
+    "card": "Card",
+    "online": "Online",
+    "other": "Other"
+  }
+}

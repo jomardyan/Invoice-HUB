@@ -1,0 +1,80 @@
+{
+  "common": {
+    "save": "Zapisz",
+    "cancel": "Anuluj",
+    "delete": "Usuń",
+    "edit": "Edytuj",
+    "create": "Utwórz",
+    "search": "Szukaj",
+    "filter": "Filtruj",
+    "export": "Eksportuj",
+    "import": "Importuj",
+    "print": "Drukuj",
+    "loading": "Ładowanie...",
+    "error": "Błąd",
+    "success": "Sukces",
+    "yes": "Tak",
+    "no": "Nie",
+    "actions": "Akcje"
+  },
+  "auth": {
+    "login": "Zaloguj się",
+    "logout": "Wyloguj",
+    "register": "Zarejestruj się",
+    "email": "Email",
+    "password": "Hasło",
+    "forgotPassword": "Zapomniałeś hasła?",
+    "welcomeBack": "Witaj ponownie",
+    "signInToContinue": "Zaloguj się, aby kontynuować"
+  },
+  "dashboard": {
+    "title": "Panel główny",
+    "revenue": "Przychody",
+    "invoices": "Faktury",
+    "customers": "Klienci",
+    "products": "Produkty",
+    "outstanding": "Do zapłaty",
+    "overdue": "Przeterminowane",
+    "thisMonth": "W tym miesiącu",
+    "lastMonth": "W zeszłym miesiącu"
+  },
+  "invoice": {
+    "invoice": "Faktura",
+    "invoices": "Faktury",
+    "createInvoice": "Utwórz fakturę",
+    "editInvoice": "Edytuj fakturę",
+    "invoiceNumber": "Numer faktury",
+    "issueDate": "Data wystawienia",
+    "dueDate": "Termin płatności",
+    "total": "Suma",
+    "status": "Status",
+    "draft": "Projekt",
+    "sent": "Wysłana",
+    "paid": "Opłacona",
+    "overdue": "Przeterminowana",
+    "cancelled": "Anulowana"
+  },
+  "customer": {
+    "customer": "Klient",
+    "customers": "Klienci",
+    "addCustomer": "Dodaj klienta",
+    "customerName": "Nazwa klienta",
+    "nip": "NIP",
+    "email": "Email",
+    "phone": "Telefon"
+  },
+  "payment": {
+    "payment": "Płatność",
+    "payments": "Płatności",
+    "recordPayment": "Zarejestruj płatność",
+    "paymentDate": "Data płatności",
+    "paymentMethod": "Metoda płatności",
+    "amount": "Kwota",
+    "reference": "Numer referencyjny",
+    "bankTransfer": "Przelew bankowy",
+    "cash": "Gotówka",
+    "card": "Karta",
+    "online": "Online",
+    "other": "Inna"
+  }
+}

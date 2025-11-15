@@ -32,7 +32,7 @@ interface PaymentRefund {
   reason?: string;
 }
 
-class PaymentService {
+export class PaymentService {
   private paymentRepository: Repository<Payment>;
   private invoiceRepository: Repository<Invoice>;
   private invoiceService: typeof InvoiceService;

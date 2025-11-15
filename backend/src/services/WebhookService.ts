@@ -26,7 +26,7 @@ interface WebhookPayload {
 const MAX_RETRY_ATTEMPTS = 5;
 const RETRY_DELAYS = [60, 300, 900, 3600, 7200]; // 1min, 5min, 15min, 1h, 2h
 
-class WebhookService {
+export class WebhookService {
   private webhookRepository: Repository<Webhook>;
   private deliveryRepository: Repository<WebhookDelivery>;
 

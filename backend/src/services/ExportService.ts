@@ -35,7 +35,7 @@ export interface ExportResult {
   error?: string;
 }
 
-class ExportService {
+export class ExportService {
   /**
    * Export single invoice
    */

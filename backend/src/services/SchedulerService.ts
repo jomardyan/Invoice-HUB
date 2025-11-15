@@ -17,7 +17,7 @@ interface ScheduledTask {
   handler: () => Promise<void>;
 }
 
-class SchedulerService {
+export class SchedulerService {
   private tasks: Map<string, ScheduledTask> = new Map();
   private intervals: Map<string, NodeJS.Timeout> = new Map();
   private running = false;

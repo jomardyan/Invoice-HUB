@@ -33,7 +33,7 @@ interface OTPData {
   expiryMinutes: number;
 }
 
-class SMSService {
+export class SMSService {
   private twilioAccountSid: string;
   private twilioAuthToken: string;
   private twilioPhoneNumber: string;

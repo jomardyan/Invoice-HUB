@@ -76,7 +76,7 @@ export interface CreateNotificationInput {
   expiresAt?: Date;
 }
 
-class NotificationService {
+export class NotificationService {
   private notifications: Map<string, Notification> = new Map();
   private preferences: Map<string, NotificationPreferences> = new Map();
 

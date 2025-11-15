@@ -103,7 +103,7 @@ export interface DashboardMetrics {
   }[];
 }
 
-class ReportingService {
+export class ReportingService {
   private invoiceRepository: Repository<Invoice>;
 
   constructor() {

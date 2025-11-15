@@ -92,7 +92,7 @@
     "jest-environment-jsdom": "^30.2.0",
     "nodemon": "latest",
     "pg": "^8.16.3",
-    "prettier": "latest",
+    "prettier": "^3.6.2",
     "supertest": "latest",
     "ts-jest": "latest",
     "ts-node": "latest",

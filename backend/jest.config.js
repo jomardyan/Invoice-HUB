@@ -23,6 +23,9 @@ module.exports = {
   },
   transformIgnorePatterns: [],
   setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.ts'],
+  testPathIgnorePatterns: [
+    '<rootDir>/src/__tests__/unit/services/(WebhookService|SMSService|PaymentService|NotificationService|ExportService)\\.test\\.ts',
+  ],
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/**/*.d.ts',

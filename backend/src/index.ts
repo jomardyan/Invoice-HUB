@@ -1,3 +1,4 @@
+import 'tsconfig-paths/register';
 import App from './app';
 
 const application = new App();

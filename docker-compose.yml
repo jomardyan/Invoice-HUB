@@ -60,20 +60,20 @@ services:
         condition: service_healthy
     command: npm run dev
 
-  # Frontend (to be added)
-  # frontend:
-  #   build:
-  #     context: ./frontend
-  #     dockerfile: Dockerfile
-  #   container_name: invoice-hub-frontend
-  #   restart: unless-stopped
-  #   ports:
-  #     - "5173:5173"
-  #   volumes:
-  #     - ./frontend:/app
-  #     - /app/node_modules
-  #   depends_on:
-  #     - backend
+# Frontend (to be added)
+# frontend:
+#   build:
+#     context: ./frontend
+#     dockerfile: Dockerfile
+#   container_name: invoice-hub-frontend
+#   restart: unless-stopped
+#   ports:
+#     - "5173:5173"
+#   volumes:
+#     - ./frontend:/app
+#     - /app/node_modules
+#   depends_on:
+#     - backend
 
 volumes:
   postgres_data:

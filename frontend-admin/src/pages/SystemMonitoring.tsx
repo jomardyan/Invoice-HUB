@@ -4,7 +4,6 @@ import {
   Card,
   CardContent,
   Typography,
-  Grid2,
   Tabs,
   Tab,
   Table,
@@ -19,6 +18,7 @@ import {
   CircularProgress,
   Alert,
   Button,
+  Grid,
 } from '@mui/material';
 import {
   CheckCircleOutline,
@@ -235,9 +235,9 @@ function SystemMonitoring() {
       {/* Service Health Tab */}
       {activeTab === 0 && (
         <Box>
-          <Grid2 container spacing={3}>
+          <Grid container spacing={3}>
             {services.map((service) => (
-              <Grid2 size={{ xs: 12, md: 6 }} key={service.name}>
+              <Grid xs={12} md={6} key={service.name}>
                 <Card>
                   <CardContent>
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
@@ -249,41 +249,41 @@ function SystemMonitoring() {
                         size="small"
                       />
                     </Box>
-                    <Grid2 container spacing={2}>
-                      <Grid2 size={6}>
+                    <Grid container spacing={2}>
+                      <Grid xs={6}>
                         <Typography variant="body2" color="text.secondary">
                           Uptime
                         </Typography>
                         <Typography variant="h6">{service.uptime}%</Typography>
-                      </Grid2>
-                      <Grid2 size={6}>
+                      </Grid>
+                      <Grid xs={6}>
                         <Typography variant="body2" color="text.secondary">
                           Response Time
                         </Typography>
                         <Typography variant="h6">{service.responseTime}ms</Typography>
-                      </Grid2>
-                      <Grid2 size={12}>
+                      </Grid>
+                      <Grid xs={12}>
                         <Typography variant="body2" color="text.secondary">
                           Last Check
                         </Typography>
                         <Typography variant="body2">
                           {new Date(service.lastCheck).toLocaleString()}
                         </Typography>
-                      </Grid2>
-                    </Grid2>
+                      </Grid>
+                    </Grid>
                   </CardContent>
                 </Card>
-              </Grid2>
+              </Grid>
             ))}
-          </Grid2>
+          </Grid>
         </Box>
       )}
 
       {/* Performance Tab */}
       {activeTab === 1 && (
         <Box>
-          <Grid2 container spacing={3}>
-            <Grid2 size={{ xs: 12, lg: 6 }}>
+          <Grid container spacing={3}>
+            <Grid xs={12} lg={6}>
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
@@ -315,8 +315,8 @@ function SystemMonitoring() {
                   />
                 </CardContent>
               </Card>
-            </Grid2>
-            <Grid2 size={{ xs: 12, lg: 6 }}>
+            </Grid>
+            <Grid xs={12} lg={6}>
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
@@ -346,8 +346,8 @@ function SystemMonitoring() {
                   />
                 </CardContent>
               </Card>
-            </Grid2>
-            <Grid2 size={12}>
+            </Grid>
+            <Grid xs={12}>
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
@@ -385,8 +385,8 @@ function SystemMonitoring() {
                   </TableContainer>
                 </CardContent>
               </Card>
-            </Grid2>
-          </Grid2>
+            </Grid>
+          </Grid>
         </Box>
       )}
 
@@ -435,8 +435,8 @@ function SystemMonitoring() {
 
       {/* Resources Tab */}
       {activeTab === 3 && resources && (
-        <Grid2 container spacing={3}>
-          <Grid2 size={{ xs: 12, md: 6 }}>
+        <Grid container spacing={3}>
+          <Grid xs={12} md={6}>
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
@@ -455,25 +455,25 @@ function SystemMonitoring() {
                     color={resources.cpu.current > 80 ? 'error' : 'primary'}
                   />
                 </Box>
-                <Grid2 container spacing={2}>
-                  <Grid2 size={6}>
+                <Grid container spacing={2}>
+                  <Grid xs={6}>
                     <Typography variant="body2" color="text.secondary">
                       Average
                     </Typography>
                     <Typography variant="h6">{resources.cpu.average}%</Typography>
-                  </Grid2>
-                  <Grid2 size={6}>
+                  </Grid>
+                  <Grid xs={6}>
                     <Typography variant="body2" color="text.secondary">
                       Peak
                     </Typography>
                     <Typography variant="h6">{resources.cpu.peak}%</Typography>
-                  </Grid2>
-                </Grid2>
+                  </Grid>
+                </Grid>
               </CardContent>
             </Card>
-          </Grid2>
+          </Grid>
 
-          <Grid2 size={{ xs: 12, md: 6 }}>
+          <Grid xs={12} md={6}>
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
@@ -496,9 +496,9 @@ function SystemMonitoring() {
                 </Box>
               </CardContent>
             </Card>
-          </Grid2>
+          </Grid>
 
-          <Grid2 size={{ xs: 12, md: 6 }}>
+          <Grid xs={12} md={6}>
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
@@ -521,30 +521,30 @@ function SystemMonitoring() {
                 </Box>
               </CardContent>
             </Card>
-          </Grid2>
+          </Grid>
 
-          <Grid2 size={{ xs: 12, md: 6 }}>
+          <Grid xs={12} md={6}>
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
                   Database
                 </Typography>
-                <Grid2 container spacing={2}>
-                  <Grid2 size={6}>
+                <Grid container spacing={2}>
+                  <Grid xs={6}>
                     <Typography variant="body2" color="text.secondary">
                       Connections
                     </Typography>
                     <Typography variant="h6">
                       {resources.database.connections} / {resources.database.maxConnections}
                     </Typography>
-                  </Grid2>
-                  <Grid2 size={6}>
+                  </Grid>
+                  <Grid xs={6}>
                     <Typography variant="body2" color="text.secondary">
                       Size
                     </Typography>
                     <Typography variant="h6">{formatBytes(resources.database.size)}</Typography>
-                  </Grid2>
-                  <Grid2 size={12}>
+                  </Grid>
+                  <Grid xs={12}>
                     <Typography variant="body2" color="text.secondary">
                       Slow Queries
                     </Typography>
@@ -555,12 +555,12 @@ function SystemMonitoring() {
                         size="small"
                       />
                     </Typography>
-                  </Grid2>
-                </Grid2>
+                  </Grid>
+                </Grid>
               </CardContent>
             </Card>
-          </Grid2>
-        </Grid2>
+          </Grid>
+        </Grid>
       )}
     </Box>
   );

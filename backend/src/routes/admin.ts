@@ -6,7 +6,7 @@ import { Tenant } from '../entities/Tenant';
 const router = Router();
 
 // Get platform metrics
-router.get('/metrics', async (req: Request, res: Response) => {
+router.get('/metrics', async (_req: Request, res: Response) => {
     try {
         const tenantRepo = AppDataSource.getRepository(Tenant);
         
@@ -50,7 +50,7 @@ router.get('/metrics', async (req: Request, res: Response) => {
 });
 
 // Get tenant growth data
-router.get('/analytics/tenant-growth', async (req: Request, res: Response) => {
+router.get('/analytics/tenant-growth', async (_req: Request, res: Response) => {
     try {
         // Mock data - implement actual calculation based on your needs
         const growthData = [
@@ -75,7 +75,7 @@ router.get('/analytics/tenant-growth', async (req: Request, res: Response) => {
 });
 
 // Get revenue data
-router.get('/analytics/revenue', async (req: Request, res: Response) => {
+router.get('/analytics/revenue', async (_req: Request, res: Response) => {
     try {
         // Mock data - implement actual calculation
         const revenueData = [
@@ -100,7 +100,7 @@ router.get('/analytics/revenue', async (req: Request, res: Response) => {
 });
 
 // Get subscription distribution
-router.get('/analytics/subscriptions', async (req: Request, res: Response) => {
+router.get('/analytics/subscriptions', async (_req: Request, res: Response) => {
     try {
         const tenantRepo = AppDataSource.getRepository(Tenant);
         const tenants = await tenantRepo.find();
@@ -130,7 +130,7 @@ router.get('/analytics/subscriptions', async (req: Request, res: Response) => {
 });
 
 // Get top tenants
-router.get('/tenants/top', async (req: Request, res: Response) => {
+router.get('/tenants/top', async (_req: Request, res: Response) => {
     try {
         const tenantRepo = AppDataSource.getRepository(Tenant);
         const tenants = await tenantRepo.find({ take: 5 });
@@ -210,7 +210,7 @@ router.get('/tenants', async (req: Request, res: Response) => {
 router.post('/tenants/:id/suspend', async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const { reason } = req.body;
+        // const { reason } = req.body;
         
         const tenantRepo = AppDataSource.getRepository(Tenant);
         const tenant = await tenantRepo.findOneBy({ id });
@@ -222,9 +222,9 @@ router.post('/tenants/:id/suspend', async (req: Request, res: Response) => {
         tenant.isActive = false;
         await tenantRepo.save(tenant);
         
-        res.json({ message: 'Tenant suspended successfully' });
+        return res.json({ message: 'Tenant suspended successfully' });
     } catch (error) {
-        res.status(500).json({ message: 'Failed to suspend tenant' });
+        return res.status(500).json({ message: 'Failed to suspend tenant' });
     }
 });
 
@@ -243,9 +243,9 @@ router.post('/tenants/:id/reactivate', async (req: Request, res: Response) => {
         tenant.isActive = true;
         await tenantRepo.save(tenant);
         
-        res.json({ message: 'Tenant reactivated successfully' });
+        return res.json({ message: 'Tenant reactivated successfully' });
     } catch (error) {
-        res.status(500).json({ message: 'Failed to reactivate tenant' });
+        return res.status(500).json({ message: 'Failed to reactivate tenant' });
     }
 });
 
@@ -264,7 +264,7 @@ router.delete('/tenants/:id', async (req: Request, res: Response) => {
 });
 
 // System monitoring endpoints
-router.get('/monitoring/health', async (req: Request, res: Response) => {
+router.get('/monitoring/health', async (_req: Request, res: Response) => {
     try {
         const services = [
             { name: 'API Server', status: 'operational', uptime: 99.9, lastCheck: new Date().toISOString(), responseTime: 45 },
@@ -280,7 +280,7 @@ router.get('/monitoring/health', async (req: Request, res: Response) => {
     }
 });
 
-router.get('/monitoring/performance', async (req: Request, res: Response) => {
+router.get('/monitoring/performance', async (_req: Request, res: Response) => {
     try {
         const metrics = [
             { endpoint: '/api/invoices', avgResponseTime: 120, requestCount: 15420, errorRate: 0.2 },
@@ -296,7 +296,7 @@ router.get('/monitoring/performance', async (req: Request, res: Response) => {
     }
 });
 
-router.get('/monitoring/errors', async (req: Request, res: Response) => {
+router.get('/monitoring/errors', async (_req: Request, res: Response) => {
     try {
         const logs = [
             {
@@ -323,7 +323,7 @@ router.get('/monitoring/errors', async (req: Request, res: Response) => {
     }
 });
 
-router.get('/monitoring/resources', async (req: Request, res: Response) => {
+router.get('/monitoring/resources', async (_req: Request, res: Response) => {
     try {
         const resources = {
             cpu: {

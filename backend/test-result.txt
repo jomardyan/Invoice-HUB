@@ -1,5 +1,0 @@
-
-> invoice-hub-backend@1.0.0 test
-> jest --coverage
-
-sh: line 1: jest: command not found

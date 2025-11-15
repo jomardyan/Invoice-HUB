@@ -9,12 +9,19 @@ export interface CreateInvoiceRequest {
     dueDate: string;
     paymentMethod: string;
     currency: string;
+    subtotal: number;
+    totalVat: number;
+    totalAmount: number;
+    status?: string;
     items: Array<{
+        productId?: string;
         description: string;
         quantity: number;
         unitPrice: number;
         vatRate: number;
-        discount: number;
+        netAmount: number;
+        vatAmount: number;
+        grossAmount: number;
     }>;
     notes?: string;
     terms?: string;

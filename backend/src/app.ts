@@ -33,6 +33,7 @@ import webhooksRoutes from './routes/webhooks';
 import paymentsRoutes from './routes/payments';
 import allegroRoutes from './routes/allegro';
 import healthRoutes from './routes/health';
+import adminRoutes from './routes/admin';
 import SchedulerService from './services/SchedulerService';
 
 class App {
@@ -123,6 +124,7 @@ class App {
 
     // API routes
     this.app.use(`/api/${config.apiVersion}/auth`, authRoutes);
+    this.app.use(`/api/${config.apiVersion}/admin`, adminRoutes);
     this.app.use(`/api/${config.apiVersion}`, companiesRoutes);
     this.app.use(`/api/${config.apiVersion}`, customersRoutes);
     this.app.use(`/api/${config.apiVersion}`, productsRoutes);

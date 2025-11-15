@@ -1,9 +1,13 @@
 import { useState } from 'react';
 import { Box, Typography, Button, Chip } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import AddIcon from '@mui/icons-material/Add';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DataTable from '../../components/organisms/DataTable';
+import ProductCreateDialog from '../../components/organisms/ProductCreateDialog';
+import ProductEditDialog from '../../components/organisms/ProductEditDialog';
 import { useGetProductsQuery, useDeleteProductMutation } from '../../store/api/productApi';
 import { useAuth } from '../../hooks/useAuth';
 import { toast } from 'react-toastify';
@@ -11,10 +15,14 @@ import type { Product } from '../../types';
 import type { Column, Action } from '../../components/organisms/DataTable';
 
 function ProductList() {
+  const navigate = useNavigate();
   const { tenant } = useAuth();
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [search, setSearch] = useState('');
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   const { data, isLoading } = useGetProductsQuery(
     {
@@ -29,13 +37,16 @@ function ProductList() {
   const [deleteProduct] = useDeleteProductMutation();
 
   const handleAddProduct = () => {
-    // TODO: Open create product dialog
-    toast.info('Create product dialog coming soon');
+    setCreateDialogOpen(true);
+  };
+
+  const handleViewProduct = (product: Product) => {
+    navigate(`/${tenant?.id}/products/view/${product.id}`);
   };
 
   const handleEditProduct = (product: Product) => {
-    // TODO: Open edit product dialog
-    toast.info('Edit product dialog coming soon');
+    setSelectedProduct(product);
+    setEditDialogOpen(true);
   };
 
   const handleDeleteProduct = async (product: Product) => {
@@ -107,6 +118,11 @@ function ProductList() {
 
   const actions: Action<Product>[] = [
     {
+      label: 'View',
+      icon: <VisibilityIcon fontSize="small" />,
+      onClick: handleViewProduct,
+    },
+    {
       label: 'Edit',
       icon: <EditIcon fontSize="small" />,
       onClick: handleEditProduct,
@@ -143,6 +159,22 @@ function ProductList() {
         isLoading={isLoading}
         searchPlaceholder="Search by SKU or name..."
         emptyMessage="No products found"
+      />
+
+      <ProductCreateDialog
+        open={createDialogOpen}
+        onClose={() => setCreateDialogOpen(false)}
+        onSuccess={() => setPage(0)}
+      />
+
+      <ProductEditDialog
+        open={editDialogOpen}
+        product={selectedProduct}
+        onClose={() => {
+          setEditDialogOpen(false);
+          setSelectedProduct(null);
+        }}
+        onSuccess={() => setPage(0)}
       />
     </Box>
   );

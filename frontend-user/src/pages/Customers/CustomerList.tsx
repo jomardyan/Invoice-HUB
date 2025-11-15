@@ -6,6 +6,8 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DataTable from '../../components/organisms/DataTable';
+import CustomerCreateDialog from '../../components/organisms/CustomerCreateDialog';
+import CustomerEditDialog from '../../components/organisms/CustomerEditDialog';
 import { useGetCustomersQuery, useDeleteCustomerMutation } from '../../store/api/customerApi';
 import { useAuth } from '../../hooks/useAuth';
 import { toast } from 'react-toastify';
@@ -18,6 +20,9 @@ function CustomerList() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [search, setSearch] = useState('');
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
 
   const { data, isLoading } = useGetCustomersQuery(
     {
@@ -32,17 +37,16 @@ function CustomerList() {
   const [deleteCustomer] = useDeleteCustomerMutation();
 
   const handleAddCustomer = () => {
-    // TODO: Open create customer dialog
-    toast.info('Create customer dialog coming soon');
+    setCreateDialogOpen(true);
   };
 
   const handleViewCustomer = (customer: Customer) => {
-    navigate(`/${tenant?.id}/customers/${customer.id}`);
+    navigate(`/${tenant?.id}/customers/view/${customer.id}`);
   };
 
   const handleEditCustomer = (customer: Customer) => {
-    // TODO: Open edit customer dialog
-    toast.info('Edit customer dialog coming soon');
+    setSelectedCustomer(customer);
+    setEditDialogOpen(true);
   };
 
   const handleDeleteCustomer = async (customer: Customer) => {
@@ -145,6 +149,22 @@ function CustomerList() {
         isLoading={isLoading}
         searchPlaceholder="Search by name, email, or NIP..."
         emptyMessage="No customers found"
+      />
+
+      <CustomerCreateDialog
+        open={createDialogOpen}
+        onClose={() => setCreateDialogOpen(false)}
+        onSuccess={() => setPage(0)}
+      />
+
+      <CustomerEditDialog
+        open={editDialogOpen}
+        customer={selectedCustomer}
+        onClose={() => {
+          setEditDialogOpen(false);
+          setSelectedCustomer(null);
+        }}
+        onSuccess={() => setPage(0)}
       />
     </Box>
   );

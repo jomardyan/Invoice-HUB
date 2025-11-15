@@ -60,6 +60,15 @@ export class Tenant {
   @Column({ type: 'int', default: 100 })
   invoiceQuotaPerMonth: number;
 
+  @Column({ type: 'int', default: 0 })
+  userCount: number;
+
+  @Column({ type: 'int', default: 0 })
+  invoiceCount: number;
+
+  @Column({ type: 'varchar', nullable: true })
+  email: string;
+
   @Column({ type: 'jsonb', nullable: true })
   settings: Record<string, any>;
 

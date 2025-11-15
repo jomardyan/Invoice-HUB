@@ -1,11 +1,11 @@
-import { Box, Toolbar, IconButton, Badge, Avatar, Menu, MenuItem } from '@mui/material';
-import NotificationsIcon from '@mui/icons-material/Notifications';
+import { Box, Toolbar, IconButton, Avatar, Menu, MenuItem } from '@mui/material';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useAppDispatch } from '../../hooks/useRedux';
 import { logout } from '../../store/slices/authSlice';
+import NotificationCenter from './NotificationCenter';
 import type { MouseEvent } from 'react';
 
 function Header() {
@@ -43,11 +43,7 @@ function Header() {
       }}
     >
       {/* Notifications */}
-      <IconButton color="inherit" sx={{ mr: 1 }}>
-        <Badge badgeContent={3} color="error">
-          <NotificationsIcon />
-        </Badge>
-      </IconButton>
+      <NotificationCenter />
 
       {/* Settings */}
       <IconButton color="inherit" sx={{ mr: 2 }} onClick={handleSettings}>

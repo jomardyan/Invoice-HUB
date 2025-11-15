@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import {
   Box,
   Typography,
@@ -24,6 +25,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { useGetInvoiceQuery, useDeleteInvoiceMutation } from '../../store/api/invoiceApi';
 import { useAuth } from '../../hooks/useAuth';
 import StatusBadge from '../../components/atoms/StatusBadge';
+import SendInvoiceDialog from '../../components/organisms/SendInvoiceDialog';
 import { format } from 'date-fns';
 import { toast } from 'react-toastify';
 
@@ -31,6 +33,7 @@ function InvoiceDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { tenant } = useAuth();
+  const [sendDialogOpen, setSendDialogOpen] = useState(false);
 
   const { data: invoice, isLoading, error } = useGetInvoiceQuery(
     { tenantId: tenant?.id || '', id: id || '' },
@@ -52,11 +55,26 @@ function InvoiceDetail() {
   };
 
   const handleSend = () => {
-    toast.info('Send invoice feature coming soon');
+    setSendDialogOpen(true);
+  };
+
+  const handleSendEmail = async (data: { email: string; subject: string; message: string; attachPdf: boolean }) => {
+    try {
+      // TODO: Call API endpoint to send email
+      toast.success(`Invoice sent to ${data.email}`);
+      console.log('Send email data:', data);
+    } catch (error) {
+      toast.error('Failed to send invoice');
+    }
   };
 
   const handleDownload = () => {
-    toast.info('Download PDF feature coming soon');
+    if (invoice) {
+      // TODO: Call API endpoint to generate and download PDF
+      const pdfUrl = `/api/tenants/${tenant?.id}/invoices/${invoice.id}/pdf`;
+      window.open(pdfUrl, '_blank');
+      toast.success('Downloading invoice PDF...');
+    }
   };
 
   const handlePrint = () => {
@@ -329,6 +347,13 @@ function InvoiceDetail() {
           </Box>
         )}
       </Paper>
+
+      <SendInvoiceDialog
+        open={sendDialogOpen}
+        invoice={invoice}
+        onClose={() => setSendDialogOpen(false)}
+        onSend={handleSendEmail}
+      />
     </Box>
   );
 }

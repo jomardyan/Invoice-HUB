@@ -1,2 +1,96 @@
 // @ts-nocheck
-import { ReportingService, SalesReport, TaxReport, CustomerAnalytics, DashboardMetrics } from '@/services/ReportingService'; import { InvoiceStatus } from '@/entities/Invoice';  jest.mock('uuid', () => ({   v4: jest.fn(() => 'mocked-uuid-v4'), }));  describe('ReportingService', () => {   let reportingService: ReportingService;    beforeEach(() => {     reportingService = new ReportingService();   });    describe('sales reports', () => {     it('should generate sales report', () => {       const report: SalesReport = {         totalRevenue: 50000,         totalInvoices: 100,         paidInvoices: 85,         unpaidInvoices: 15,         overdueInvoices: 3,         averageInvoiceValue: 500,         totalTaxCollected: 11500,         revenueByMonth: [],         revenueByStatus: [],       };        expect(report.totalRevenue).toBeGreaterThan(0);       expect(report.totalInvoices).toBeGreaterThan(0);     });      it('should calculate average invoice value', () => {       const totalRevenue = 50000;       const invoiceCount = 100;       const average = totalRevenue / invoiceCount;        expect(average).toBe(500);     });      it('should track payment rate', () => {       const paid = 85;       const total = 100;       const paymentRate = (paid / total) * 100;        expect(paymentRate).toBe(85);     });      it('should calculate overdue percentage', () => {       const overdue = 3;       const total = 100;       const overduePercent = (overdue / total) * 100;        expect(overduePercent).toBe(3);     });   });    describe('monthly revenue breakdown', () => {     it('should track monthly revenue', () => {       const monthlyRevenue = [         { month: 'January', year: 2024, revenue: 5000, invoiceCount: 10 },         { month: 'February', year: 2024, revenue: 6000, invoiceCount: 12 },       ];        expect(monthlyRevenue).toHaveLength(2);       expect(monthlyRevenue[1].revenue > monthlyRevenue[0].revenue).toBe(true);     });      it('should calculate monthly average', () => {       const revenue = 6000;       const count = 12;       const average = revenue / count;        expect(average).toBe(500);     });   });    describe('revenue by status', () => {     it('should break down revenue by invoice status', () => {       const byStatus = [         { status: InvoiceStatus.PAID, count: 85, totalAmount: 42500 },         { status: InvoiceStatus.UNPAID, count: 12, totalAmount: 6000 },         { status: InvoiceStatus.OVERDUE, count: 3, totalAmount: 1500 },       ];        expect(byStatus).toHaveLength(3);       expect(byStatus[0].totalAmount).toBeGreaterThan(byStatus[1].totalAmount);     });   });    describe('tax reports', () => {     it('should generate tax report', () => {       const report: TaxReport = {         period: {           startDate: new Date('2024-01-01'),           endDate: new Date('2024-12-31'),         },         totalNetAmount: 50000,         totalTaxAmount: 11500,         totalGrossAmount: 61500,         taxByRate: [],         invoiceCount: 100,       };        expect(report.totalTaxAmount).toBe(11500);       expect(report.invoiceCount).toBe(100);     });      it('should break down tax by rate', () => {       const taxBreakdown = [         { vatRate: 23, netAmount: 40000, taxAmount: 9200 },         { vatRate: 8, netAmount: 10000, taxAmount: 800 },       ];        const totalTax = taxBreakdown.reduce((sum, t) => sum + t.taxAmount, 0);       expect(totalTax).toBe(10000);     });      it('should calculate tax percentage', () => {       const netAmount = 50000;       const taxAmount = 11500;       const taxPercent = (taxAmount / netAmount) * 100;        expect(taxPercent).toBe(23);     });   });    describe('customer analytics', () => {     it('should generate customer analytics', () => {       const analytics: CustomerAnalytics = {         customerId: 'cust-123',         customerName: 'John Doe',         totalInvoices: 10,         totalRevenue: 5000,         averageInvoiceValue: 500,         paidInvoices: 9,         unpaidInvoices: 1,         overdueInvoices: 0,         lastInvoiceDate: new Date(),         paymentRate: 0.9,       };        expect(analytics.paymentRate).toBe(0.9);       expect(analytics.totalRevenue).toBeGreaterThan(0);     });      it('should track customer lifetime value', () => {       const totalRevenue = 50000;       expect(totalRevenue).toBeGreaterThan(0);     });      it('should calculate customer payment reliability', () => {       const paid = 9;       const total = 10;       const reliability = (paid / total) * 100;        expect(reliability).toBe(90);     });   });    describe('product analytics', () => {     it('should track product sales', () => {       const analytics = {         productId: 'prod-123',         productName: 'Laptop',         sku: 'LAP-001',         totalQuantitySold: 50,         totalRevenue: 150000,         averagePrice: 3000,         invoiceCount: 30,       };        expect(analytics.totalQuantitySold).toBeGreaterThan(0);       expect(analytics.totalRevenue).toBeGreaterThan(0);     });      it('should identify top products', () => {       const products = [         { sku: 'LAP-001', sales: 50 },         { sku: 'PHONE-001', sales: 100 },         { sku: 'TABLET-001', sales: 30 },       ];        const topProduct = products.reduce((max, p) => p.sales > max.sales ? p : max);       expect(topProduct.sku).toBe('PHONE-001');     });   });    describe('dashboard metrics', () => {     it('should calculate current month revenue', () => {       const metrics: DashboardMetrics = {         currentMonth: {           revenue: 12000,           invoiceCount: 24,           paidInvoices: 22,           overdueInvoices: 1,         },         lastMonth: {           revenue: 10000,           invoiceCount: 20,         },         growthRate: 0.2, // 20%         outstandingAmount: 5000,         averagePaymentTime: 7,         topCustomers: [],         topProducts: [],         recentActivity: {           date: new Date(),         },       };        expect(metrics.currentMonth.revenue).toBeGreaterThan(0);     });      it('should calculate month-over-month growth', () => {       const current = 12000;       const previous = 10000;       const growth = ((current - previous) / previous) * 100;        expect(growth).toBe(20);     });      it('should track outstanding amount', () => {       const outstanding = 5000;       expect(outstanding).toBeGreaterThan(0);     });      it('should calculate average payment time', () => {       const averagePaymentTime = 7; // days       expect(averagePaymentTime).toBeGreaterThan(0);     });   });    describe('top customers reporting', () => {     it('should identify top customers by revenue', () => {       const customers = [         { name: 'Customer A', revenue: 20000 },         { name: 'Customer B', revenue: 15000 },         { name: 'Customer C', revenue: 10000 },       ];        const top = customers.sort((a, b) => b.revenue - a.revenue).slice(0, 5);       expect(top[0].name).toBe('Customer A');     });   });    describe('date range filtering', () => {     it('should filter by date range', () => {       const startDate = new Date('2024-01-01');       const endDate = new Date('2024-12-31');        expect(endDate > startDate).toBe(true);     });      it('should support monthly reports', () => {       const month = 'January';       const year = 2024;        expect(month).toBeDefined();     });      it('should support quarterly reports', () => {       const quarter = 'Q1';       const year = 2024;        expect(quarter).toBeDefined();     });      it('should support yearly reports', () => {       const year = 2024;       expect(year).toBeGreaterThan(0);     });   });    describe('export formats', () => {     it('should export reports to PDF', () => {       const format = 'pdf';       expect(format).toBe('pdf');     });      it('should export reports to Excel', () => {       const format = 'excel';       expect(format).toBe('excel');     });      it('should export reports to CSV', () => {       const format = 'csv';       expect(format).toBe('csv');     });   });    describe('caching', () => {     it('should cache report results', () => {       const cacheKey = 'report_sales_2024_01';       expect(cacheKey).toBeDefined();     });      it('should set cache expiry', () => {       const cacheTTL = 15 * 60; // 15 minutes       expect(cacheTTL).toBeGreaterThan(0);     });   });    describe('scheduled reports', () => {     it('should support daily reports', () => {       const schedule = 'daily';       expect(schedule).toBe('daily');     });      it('should support weekly reports', () => {       const schedule = 'weekly';       expect(schedule).toBe('weekly');     });      it('should support monthly reports', () => {       const schedule = 'monthly';       expect(schedule).toBe('monthly');     });   });    describe('audit trail', () => {     it('should log report access', () => {       const log = {         reportType: 'sales',         accessedBy: 'user-123',         timestamp: new Date(),       };        expect(log.reportType).toBeDefined();       expect(log.timestamp).toBeDefined();     });   }); });
+import ReportingService from '@/services/ReportingService';
+import { InvoiceStatus } from '@/entities/Invoice';
+
+jest.mock('uuid', () => ({
+  v4: jest.fn(() => 'mocked-uuid-v4'),
+}));
+
+describe('ReportingService', () => {
+  beforeEach(() => {
+    // ReportingService is a singleton, no instantiation needed
+  });
+
+  describe('sales reports', () => {
+    it('should generate sales report', () => {
+      const report = {
+        totalRevenue: 50000,
+        totalInvoices: 100,
+        paidInvoices: 85,
+        unpaidInvoices: 15,
+        overdueInvoices: 3,
+        averageInvoiceValue: 500,
+        totalTaxCollected: 11500,
+        revenueByMonth: [],
+        revenueByStatus: [],
+      };
+
+      expect(report.totalRevenue).toBeGreaterThan(0);
+      expect(report.totalInvoices).toBeGreaterThan(0);
+    });      it('should calculate average invoice value', () => {       const totalRevenue = 50000;       const invoiceCount = 100;       const average = totalRevenue / invoiceCount;        expect(average).toBe(500);     });      it('should track payment rate', () => {       const paid = 85;       const total = 100;       const paymentRate = (paid / total) * 100;        expect(paymentRate).toBe(85);     });      it('should calculate overdue percentage', () => {       const overdue = 3;       const total = 100;       const overduePercent = (overdue / total) * 100;        expect(overduePercent).toBe(3);     });   });    describe('monthly revenue breakdown', () => {     it('should track monthly revenue', () => {       const monthlyRevenue = [         { month: 'January', year: 2024, revenue: 5000, invoiceCount: 10 },         { month: 'February', year: 2024, revenue: 6000, invoiceCount: 12 },       ];        expect(monthlyRevenue).toHaveLength(2);       expect(monthlyRevenue[1].revenue > monthlyRevenue[0].revenue).toBe(true);     });      it('should calculate monthly average', () => {       const revenue = 6000;       const count = 12;       const average = revenue / count;        expect(average).toBe(500);     });   });    describe('revenue by status', () => {
+    it('should break down revenue by invoice status', () => {
+      const byStatus = [
+        { status: InvoiceStatus.PAID, count: 85, totalAmount: 42500 },
+        { status: InvoiceStatus.SENT, count: 12, totalAmount: 6000 },
+        { status: InvoiceStatus.OVERDUE, count: 3, totalAmount: 1500 },
+      ];
+
+      expect(byStatus).toHaveLength(3);
+      expect(byStatus[0].totalAmount).toBeGreaterThan(byStatus[1].totalAmount);
+    });
+  });    describe('tax reports', () => {
+    it('should generate tax report', () => {
+      const report = {
+        period: {
+          startDate: new Date('2024-01-01'),
+          endDate: new Date('2024-12-31'),
+        },
+        totalNetAmount: 50000,
+        totalTaxAmount: 11500,
+        totalGrossAmount: 61500,
+        taxByRate: [],
+        invoiceCount: 100,
+      };
+
+      expect(report.totalTaxAmount).toBe(11500);
+      expect(report.invoiceCount).toBe(100);
+    });      it('should break down tax by rate', () => {       const taxBreakdown = [         { vatRate: 23, netAmount: 40000, taxAmount: 9200 },         { vatRate: 8, netAmount: 10000, taxAmount: 800 },       ];        const totalTax = taxBreakdown.reduce((sum, t) => sum + t.taxAmount, 0);       expect(totalTax).toBe(10000);     });      it('should calculate tax percentage', () => {       const netAmount = 50000;       const taxAmount = 11500;       const taxPercent = (taxAmount / netAmount) * 100;        expect(taxPercent).toBe(23);     });   });    describe('customer analytics', () => {
+    it('should generate customer analytics', () => {
+      const analytics = {
+        customerId: 'cust-123',
+        customerName: 'John Doe',
+        totalInvoices: 10,
+        totalRevenue: 5000,
+        averageInvoiceValue: 500,
+        paidInvoices: 9,
+        unpaidInvoices: 1,
+        overdueInvoices: 0,
+        lastInvoiceDate: new Date(),
+        paymentRate: 0.9,
+      };
+
+      expect(analytics.paymentRate).toBe(0.9);
+      expect(analytics.totalRevenue).toBeGreaterThan(0);
+    });      it('should track customer lifetime value', () => {       const totalRevenue = 50000;       expect(totalRevenue).toBeGreaterThan(0);     });      it('should calculate customer payment reliability', () => {       const paid = 9;       const total = 10;       const reliability = (paid / total) * 100;        expect(reliability).toBe(90);     });   });    describe('product analytics', () => {     it('should track product sales', () => {       const analytics = {         productId: 'prod-123',         productName: 'Laptop',         sku: 'LAP-001',         totalQuantitySold: 50,         totalRevenue: 150000,         averagePrice: 3000,         invoiceCount: 30,       };        expect(analytics.totalQuantitySold).toBeGreaterThan(0);       expect(analytics.totalRevenue).toBeGreaterThan(0);     });      it('should identify top products', () => {       const products = [         { sku: 'LAP-001', sales: 50 },         { sku: 'PHONE-001', sales: 100 },         { sku: 'TABLET-001', sales: 30 },       ];        const topProduct = products.reduce((max, p) => p.sales > max.sales ? p : max);       expect(topProduct.sku).toBe('PHONE-001');     });   });    describe('dashboard metrics', () => {
+    it('should calculate current month revenue', () => {
+      const metrics = {
+        currentMonth: {
+          revenue: 12000,
+          invoiceCount: 24,
+          paidInvoices: 22,
+          overdueInvoices: 1,
+        },
+        lastMonth: {
+          revenue: 10000,
+          invoiceCount: 20,
+        },
+        growthRate: 0.2, // 20%
+        outstandingAmount: 5000,
+        averagePaymentTime: 7,
+        topCustomers: [],
+        topProducts: [],
+        recentActivity: [],
+      };
+
+      expect(metrics.currentMonth.revenue).toBeGreaterThan(0);
+    });      it('should calculate month-over-month growth', () => {       const current = 12000;       const previous = 10000;       const growth = ((current - previous) / previous) * 100;        expect(growth).toBe(20);     });      it('should track outstanding amount', () => {       const outstanding = 5000;       expect(outstanding).toBeGreaterThan(0);     });      it('should calculate average payment time', () => {       const averagePaymentTime = 7; // days       expect(averagePaymentTime).toBeGreaterThan(0);     });   });    describe('top customers reporting', () => {     it('should identify top customers by revenue', () => {       const customers = [         { name: 'Customer A', revenue: 20000 },         { name: 'Customer B', revenue: 15000 },         { name: 'Customer C', revenue: 10000 },       ];        const top = customers.sort((a, b) => b.revenue - a.revenue).slice(0, 5);       expect(top[0].name).toBe('Customer A');     });   });    describe('date range filtering', () => {     it('should filter by date range', () => {       const startDate = new Date('2024-01-01');       const endDate = new Date('2024-12-31');        expect(endDate > startDate).toBe(true);     });      it('should support monthly reports', () => {       const month = 'January';       const year = 2024;        expect(month).toBeDefined();     });      it('should support quarterly reports', () => {       const quarter = 'Q1';       const year = 2024;        expect(quarter).toBeDefined();     });      it('should support yearly reports', () => {       const year = 2024;       expect(year).toBeGreaterThan(0);     });   });    describe('export formats', () => {     it('should export reports to PDF', () => {       const format = 'pdf';       expect(format).toBe('pdf');     });      it('should export reports to Excel', () => {       const format = 'excel';       expect(format).toBe('excel');     });      it('should export reports to CSV', () => {       const format = 'csv';       expect(format).toBe('csv');     });   });    describe('caching', () => {     it('should cache report results', () => {       const cacheKey = 'report_sales_2024_01';       expect(cacheKey).toBeDefined();     });      it('should set cache expiry', () => {       const cacheTTL = 15 * 60; // 15 minutes       expect(cacheTTL).toBeGreaterThan(0);     });   });    describe('scheduled reports', () => {     it('should support daily reports', () => {       const schedule = 'daily';       expect(schedule).toBe('daily');     });      it('should support weekly reports', () => {       const schedule = 'weekly';       expect(schedule).toBe('weekly');     });      it('should support monthly reports', () => {       const schedule = 'monthly';       expect(schedule).toBe('monthly');     });   });    describe('audit trail', () => {     it('should log report access', () => {       const log = {         reportType: 'sales',         accessedBy: 'user-123',         timestamp: new Date(),       };        expect(log.reportType).toBeDefined();       expect(log.timestamp).toBeDefined();     });   }); });

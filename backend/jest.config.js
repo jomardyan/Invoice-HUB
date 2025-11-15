@@ -8,23 +8,14 @@ module.exports = {
   },
   roots: ['<rootDir>/src'],
   testMatch: ['**/__tests__/**/*.ts', '**/?(*.)+(spec|test).ts'],
-  globals: {
-    'ts-jest': {
-      useESM: false,
-      tsconfig: {
-        esModuleInterop: true,
-        allowSyntheticDefaultImports: true,
-        moduleResolution: 'node',
-      },
-    },
-  },
   transform: {
-    '^.+\\.ts$': ['ts-jest', { useESM: false }],
+    '^.+\\.ts$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.jest.json' }],
   },
   transformIgnorePatterns: [],
   setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.ts'],
   testPathIgnorePatterns: [
-    '<rootDir>/src/__tests__/unit/services/(WebhookService|SMSService|PaymentService|NotificationService|ExportService)\\.test\\.ts',
+    '<rootDir>/node_modules/',
+    '<rootDir>/dist/',
   ],
   collectCoverageFrom: [
     'src/**/*.ts',

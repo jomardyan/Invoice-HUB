@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useAppDispatch } from '../../hooks/useRedux';
-import { logout } from '../../store/slices/authSlice';
+import { clearAuth } from '../../store/slices/authSlice';
 import NotificationCenter from './NotificationCenter';
 import type { MouseEvent } from 'react';
 
@@ -23,7 +23,10 @@ function Header() {
   };
 
   const handleLogout = () => {
-    dispatch(logout());
+    dispatch(clearAuth());
+    localStorage.removeItem('authState');
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
     navigate('/login');
   };
 

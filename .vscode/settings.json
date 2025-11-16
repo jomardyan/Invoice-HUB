@@ -2,5 +2,35 @@
   "jest.enable": true,
   "jest.jestCommandLine": "npm test --",
   "jest.runMode": "on-demand",
-  "jest.rootPath": "backend"
+  "jest.rootPath": "backend",
+  "remote.portsAttributes": {
+    "3000": {
+      "label": "Backend API",
+      "onAutoForward": "notify"
+    },
+    "5173": {
+      "label": "Frontend User",
+      "onAutoForward": "openBrowser"
+    },
+    "5174": {
+      "label": "Frontend Admin",
+      "onAutoForward": "openBrowser"
+    },
+    "5432": {
+      "label": "PostgreSQL",
+      "onAutoForward": "ignore"
+    },
+    "6379": {
+      "label": "Redis",
+      "onAutoForward": "ignore"
+    },
+    "4173": {
+      "label": "Frontend User (Preview)",
+      "onAutoForward": "notify"
+    },
+    "4174": {
+      "label": "Frontend Admin (Preview)",
+      "onAutoForward": "notify"
+    }
+  }
 }

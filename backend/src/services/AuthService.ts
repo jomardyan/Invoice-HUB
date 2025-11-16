@@ -2,7 +2,7 @@ import { AppDataSource } from '@/config/database';
 import { User, UserRole } from '@/entities/User';
 import { Tenant, SubscriptionTier, SubscriptionStatus } from '@/entities/Tenant';
 import { hashPassword, verifyPassword, generateRandomToken } from '@/utils/password';
-import { generateAccessToken, generateRefreshToken, JWTPayload } from '@/utils/jwt';
+import { generateAccessToken, generateRefreshToken, verifyRefreshToken, JWTPayload } from '@/utils/jwt';
 import logger from '@/utils/logger';
 
 export interface RegisterInput {
@@ -16,7 +16,7 @@ export interface RegisterInput {
 export interface LoginInput {
   email: string;
   password: string;
-  tenantId: string;
+  tenantId?: string;
 }
 
 export interface AuthResponse {
@@ -29,6 +29,11 @@ export interface AuthResponse {
     lastName: string;
     role: UserRole;
     tenantId: string;
+  };
+  tenant?: {
+    id: string;
+    name: string;
+    subscriptionTier?: string;
   };
 }
 
@@ -103,6 +108,13 @@ export class AuthService {
     }
   }
 
+  async getUserByEmail(email: string) {
+    return await this.userRepository.findOne({
+      where: { email },
+      select: ['id', 'email', 'tenantId'],
+    });
+  }
+
   async login(input: LoginInput): Promise<AuthResponse> {
     try {
       // Find user by email and tenant
@@ -155,6 +167,11 @@ export class AuthService {
         roles: [user.role],
       };
 
+      // Fetch tenant data
+      const tenant = await this.tenantRepository.findOne({
+        where: { id: user.tenantId },
+      });
+
       return {
         accessToken: generateAccessToken(payload),
         refreshToken: generateRefreshToken(payload),
@@ -166,6 +183,11 @@ export class AuthService {
           role: user.role,
           tenantId: user.tenantId,
         },
+        tenant: tenant ? {
+          id: tenant.id,
+          name: tenant.name,
+          subscriptionTier: tenant.subscriptionTier as string,
+        } : undefined,
       };
     } catch (error) {
       logger.error('Login error:', error);
@@ -235,6 +257,42 @@ export class AuthService {
       logger.info(`Password reset for user: ${user.id}`);
     } catch (error) {
       logger.error('Password reset error:', error);
+      throw error;
+    }
+  }
+
+  async refreshAccessToken(refreshToken: string): Promise<{ accessToken: string }> {
+    try {
+      // Verify refresh token using JWT utility
+      const decoded = verifyRefreshToken(refreshToken);
+
+      if (!decoded) {
+        throw new Error('Invalid refresh token');
+      }
+
+      // Get user to verify they still exist and are active
+      const user = await this.userRepository.findOne({
+        where: { id: decoded.userId },
+      });
+
+      if (!user || !user.isActive) {
+        throw new Error('User not found or inactive');
+      }
+
+      // Generate new access token
+      const payload: JWTPayload = {
+        userId: user.id,
+        email: user.email,
+        tenantId: user.tenantId,
+        roles: [user.role],
+      };
+
+      const newAccessToken = generateAccessToken(payload);
+      logger.info(`Access token refreshed for user: ${user.id}`);
+
+      return { accessToken: newAccessToken };
+    } catch (error) {
+      logger.error('Token refresh error:', error);
       throw error;
     }
   }

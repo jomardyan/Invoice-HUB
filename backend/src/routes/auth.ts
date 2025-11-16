@@ -28,8 +28,55 @@ const registerValidation = [
 const loginValidation = [
   body('email').isEmail().normalizeEmail(),
   body('password').notEmpty().withMessage('Password is required'),
-  body('tenantId').isUUID().withMessage('Valid tenant ID is required'),
+  body('tenantId').optional().isUUID().withMessage('Valid tenant ID is required'),
 ];
+
+const tenantLookupValidation = [
+  body('email').isEmail().normalizeEmail(),
+];
+
+// Tenant lookup endpoint (get tenant by user email)
+router.post('/lookup-tenant', tenantLookupValidation, async (req: Request, res: Response) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      res.status(400).json({
+        status: 'error',
+        statusCode: 400,
+        message: 'Validation failed',
+        error: errors.array(),
+      });
+      return;
+    }
+
+    const { email } = req.body;
+    const user = await authService.getUserByEmail(email);
+
+    if (!user) {
+      res.status(404).json({
+        status: 'error',
+        statusCode: 404,
+        message: 'User not found',
+      });
+      return;
+    }
+
+    res.status(200).json({
+      status: 'success',
+      statusCode: 200,
+      data: {
+        tenantId: user.tenantId,
+      },
+    });
+  } catch (error) {
+    logger.error('Tenant lookup error:', error);
+    res.status(404).json({
+      status: 'error',
+      statusCode: 404,
+      message: 'User not found',
+    });
+  }
+});
 
 // Register endpoint
 router.post('/register', registerValidation, async (req: Request, res: Response) => {
@@ -79,7 +126,25 @@ router.post('/login', authLimiter, loginValidation, async (req: Request, res: Re
       return;
     }
 
-    const result = await authService.login(req.body);
+    // If tenantId is not provided, look it up by email
+    let loginInput = req.body;
+    if (!loginInput.tenantId) {
+      const tenantLookup = await authService.getUserByEmail(loginInput.email);
+      if (!tenantLookup) {
+        res.status(404).json({
+          status: 'error',
+          statusCode: 404,
+          message: 'User not found',
+        });
+        return;
+      }
+      loginInput = {
+        ...loginInput,
+        tenantId: tenantLookup.tenantId,
+      };
+    }
+
+    const result = await authService.login(loginInput);
 
     // Set secure cookie for refresh token (in production)
     res.cookie('refreshToken', result.refreshToken, {
@@ -168,6 +233,62 @@ router.post('/reset-password', async (req: Request, res: Response) => {
       status: 'error',
       statusCode: 400,
       message: errorMessage,
+    });
+  }
+});
+
+// Refresh access token
+router.post('/refresh-token', async (req: Request, res: Response) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      res.status(400).json({
+        status: 'error',
+        statusCode: 400,
+        message: 'Refresh token is required',
+      });
+      return;
+    }
+
+    const result = await authService.refreshAccessToken(refreshToken);
+
+    res.status(200).json({
+      status: 'success',
+      statusCode: 200,
+      message: 'Token refreshed successfully',
+      data: result,
+    });
+  } catch (error) {
+    logger.error('Token refresh error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Token refresh failed';
+
+    res.status(401).json({
+      status: 'error',
+      statusCode: 401,
+      message: errorMessage,
+    });
+  }
+});
+
+// Logout endpoint
+router.post('/logout', async (_req: Request, res: Response) => {
+  try {
+    // Clear refresh token cookie if it exists
+    res.clearCookie('refreshToken');
+
+    res.status(200).json({
+      status: 'success',
+      statusCode: 200,
+      message: 'Logged out successfully',
+    });
+  } catch (error) {
+    logger.error('Logout error:', error);
+
+    res.status(200).json({
+      status: 'success',
+      statusCode: 200,
+      message: 'Logged out successfully',
     });
   }
 });

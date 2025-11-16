@@ -109,6 +109,36 @@ spinner() {
     printf "    \b\b\b\b"
 }
 
+kill_port() {
+    local port=$1
+    local service=$2
+    
+    log_info "Checking for existing server on port $port..."
+    
+    if command -v lsof &> /dev/null; then
+        local pids=$(lsof -ti:$port 2>/dev/null)
+        if [ ! -z "$pids" ]; then
+            log_warning "Port $port in use - terminating existing process(es)..."
+            
+            # Try graceful termination first
+            echo "$pids" | xargs kill -SIGTERM 2>/dev/null || true
+            sleep 2
+            
+            # Force kill if still running
+            local remaining=$(lsof -ti:$port 2>/dev/null)
+            if [ ! -z "$remaining" ]; then
+                echo "$remaining" | xargs kill -9 2>/dev/null || true
+                sleep 1
+            fi
+            
+            # Verify port is free
+            if ! lsof -ti:$port &> /dev/null; then
+                log_success "Port $port freed successfully"
+            fi
+        fi
+    fi
+}
+
 ################################################################################
 # SYSTEM DETECTION & REQUIREMENTS
 ################################################################################
@@ -129,10 +159,22 @@ detect_os() {
         log_warning "Unknown operating system"
     fi
     
-    # Check if we can use sudo
-    if command -v sudo &> /dev/null && sudo -n true 2>/dev/null; then
-        NEED_SUDO=true
-        log_success "sudo access available"
+    # Check if we can use sudo without password prompt
+    if command -v sudo &> /dev/null; then
+        if sudo -n true 2>/dev/null; then
+            NEED_SUDO=true
+            log_success "sudo access available (passwordless)"
+        elif [ "$EUID" -eq 0 ]; then
+            log_success "Running as root"
+        else
+            # Check if user is in sudo group (can use sudo with password)
+            if groups | grep -q sudo; then
+                NEED_SUDO=true
+                log_warning "sudo available but requires password - some installations may fail"
+            else
+                log_warning "No sudo access - will attempt without privileges"
+            fi
+        fi
     elif [ "$EUID" -eq 0 ]; then
         log_success "Running as root"
     else
@@ -155,14 +197,22 @@ update_package_manager() {
     case "$OS_DETECTED" in
         ubuntu|debian|pop)
             if [ "$NEED_SUDO" = true ]; then
-                sudo apt-get update -qq > /dev/null 2>&1 || log_warning "apt-get update failed"
+                if sudo -n true 2>/dev/null; then
+                    sudo apt-get update -qq > /dev/null 2>&1 || log_warning "apt-get update failed"
+                else
+                    log_warning "Skipping apt-get update (requires password)"
+                fi
             else
                 apt-get update -qq > /dev/null 2>&1 || log_warning "apt-get update failed"
             fi
             ;;
         fedora|rhel|centos)
             if [ "$NEED_SUDO" = true ]; then
-                sudo dnf check-update -q > /dev/null 2>&1 || true
+                if sudo -n true 2>/dev/null; then
+                    sudo dnf check-update -q > /dev/null 2>&1 || true
+                else
+                    log_warning "Skipping dnf check-update (requires password)"
+                fi
             else
                 dnf check-update -q > /dev/null 2>&1 || true
             fi
@@ -176,7 +226,7 @@ update_package_manager() {
             ;;
     esac
     
-    log_success "Package manager updated"
+    log_success "Package manager ready"
 }
 
 install_package() {
@@ -193,32 +243,54 @@ install_package() {
     case "$OS_DETECTED" in
         ubuntu|debian|pop)
             if [ "$NEED_SUDO" = true ]; then
-                sudo apt-get install -y -qq "$package" > /dev/null 2>&1
+                if sudo -n true 2>/dev/null; then
+                    if sudo apt-get install -y -qq "$package" > /dev/null 2>&1; then
+                        log_success "$package installed"
+                        return 0
+                    fi
+                else
+                    log_warning "Skipping $package installation (requires password)"
+                    return 1
+                fi
             else
-                apt-get install -y -qq "$package" > /dev/null 2>&1
+                if apt-get install -y -qq "$package" > /dev/null 2>&1; then
+                    log_success "$package installed"
+                    return 0
+                fi
             fi
             ;;
         fedora|rhel|centos)
             if [ "$NEED_SUDO" = true ]; then
-                sudo dnf install -y -q "$package" > /dev/null 2>&1
+                if sudo -n true 2>/dev/null; then
+                    if sudo dnf install -y -q "$package" > /dev/null 2>&1; then
+                        log_success "$package installed"
+                        return 0
+                    fi
+                else
+                    log_warning "Skipping $package installation (requires password)"
+                    return 1
+                fi
             else
-                dnf install -y -q "$package" > /dev/null 2>&1
+                if dnf install -y -q "$package" > /dev/null 2>&1; then
+                    log_success "$package installed"
+                    return 0
+                fi
             fi
             ;;
         macos)
-            brew install "$package" > /dev/null 2>&1
-            ;;
-        *)
-            log_error "Cannot install $package - unsupported OS"
-            return 1
+            if brew install "$package" > /dev/null 2>&1; then
+                log_success "$package installed"
+                return 0
+            fi
             ;;
     esac
     
+    # If command is available after installation attempt, consider it success
     if command -v "$command_name" &> /dev/null; then
-        log_success "$command_name installed successfully"
+        log_success "$command_name is now available"
         return 0
     else
-        log_error "Failed to install $command_name"
+        log_warning "$command_name not available - skipping"
         return 1
     fi
 }
@@ -237,23 +309,49 @@ install_nodejs() {
         ubuntu|debian|pop)
             log_info "Setting up NodeSource repository..."
             if [ "$NEED_SUDO" = true ]; then
-                curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - > /dev/null 2>&1
-                sudo apt-get install -y -qq nodejs > /dev/null 2>&1
+                if sudo -n true 2>/dev/null; then
+                    if curl -fsSL https://deb.nodesource.com/setup_20.x 2>/dev/null | sudo -E bash - > /dev/null 2>&1; then
+                        if sudo apt-get install -y -qq nodejs > /dev/null 2>&1; then
+                            log_success "Node.js installed: $(node --version)"
+                            return 0
+                        fi
+                    fi
+                else
+                    log_warning "Cannot install Node.js via apt (requires sudo password)"
+                    return 1
+                fi
             else
-                log_warning "Need sudo to install Node.js via apt"
-                return 1
+                if curl -fsSL https://deb.nodesource.com/setup_20.x 2>/dev/null | bash - > /dev/null 2>&1; then
+                    if apt-get install -y -qq nodejs > /dev/null 2>&1; then
+                        log_success "Node.js installed: $(node --version)"
+                        return 0
+                    fi
+                fi
             fi
             ;;
         fedora|rhel|centos)
             if [ "$NEED_SUDO" = true ]; then
-                sudo dnf install -y -q nodejs npm > /dev/null 2>&1
+                if sudo -n true 2>/dev/null; then
+                    if sudo dnf install -y -q nodejs npm > /dev/null 2>&1; then
+                        log_success "Node.js installed: $(node --version)"
+                        return 0
+                    fi
+                else
+                    log_warning "Cannot install Node.js via dnf (requires sudo password)"
+                    return 1
+                fi
             else
-                log_warning "Need sudo to install Node.js via dnf"
-                return 1
+                if dnf install -y -q nodejs npm > /dev/null 2>&1; then
+                    log_success "Node.js installed: $(node --version)"
+                    return 0
+                fi
             fi
             ;;
         macos)
-            brew install node > /dev/null 2>&1
+            if brew install node > /dev/null 2>&1; then
+                log_success "Node.js installed: $(node --version)"
+                return 0
+            fi
             ;;
     esac
     
@@ -261,7 +359,7 @@ install_nodejs() {
         log_success "Node.js installed: $(node --version)"
         return 0
     else
-        log_error "Failed to install Node.js"
+        log_error "Failed to install Node.js - cannot proceed"
         return 1
     fi
 }
@@ -277,12 +375,26 @@ install_docker() {
     case "$OS_DETECTED" in
         ubuntu|debian|pop)
             if [ "$NEED_SUDO" = true ]; then
-                # Install Docker using convenience script
-                curl -fsSL https://get.docker.com -o /tmp/get-docker.sh
-                sudo sh /tmp/get-docker.sh > /dev/null 2>&1
-                sudo usermod -aG docker $USER > /dev/null 2>&1
-                rm /tmp/get-docker.sh
-                log_warning "Docker installed - you may need to logout/login to use docker without sudo"
+                if sudo -n true 2>/dev/null; then
+                    # Install Docker using convenience script
+                    if curl -fsSL https://get.docker.com -o /tmp/get-docker.sh 2>/dev/null; then
+                        if sudo sh /tmp/get-docker.sh > /dev/null 2>&1; then
+                            sudo usermod -aG docker $USER > /dev/null 2>&1
+                            rm -f /tmp/get-docker.sh
+                            log_success "Docker installed successfully"
+                            # Apply group changes immediately
+                            if ! newgrp docker &> /dev/null; then
+                                log_info "Applying docker group permissions..."
+                                sg docker -c "docker ps > /dev/null 2>&1" || log_warning "Docker may require group refresh"
+                            fi
+                            return 0
+                        fi
+                    fi
+                    rm -f /tmp/get-docker.sh
+                else
+                    log_warning "Cannot install Docker (requires sudo password)"
+                    return 1
+                fi
             else
                 log_warning "Need sudo to install Docker"
                 return 1
@@ -290,9 +402,22 @@ install_docker() {
             ;;
         fedora|rhel|centos)
             if [ "$NEED_SUDO" = true ]; then
-                sudo dnf install -y -q docker > /dev/null 2>&1
-                sudo systemctl start docker > /dev/null 2>&1
-                sudo usermod -aG docker $USER > /dev/null 2>&1
+                if sudo -n true 2>/dev/null; then
+                    if sudo dnf install -y -q docker > /dev/null 2>&1; then
+                        sudo systemctl start docker > /dev/null 2>&1
+                        sudo usermod -aG docker $USER > /dev/null 2>&1
+                        log_success "Docker installed and started successfully"
+                        # Apply group changes immediately
+                        if ! newgrp docker &> /dev/null; then
+                            log_info "Applying docker group permissions..."
+                            sg docker -c "docker ps > /dev/null 2>&1" || log_warning "Docker may require group refresh"
+                        fi
+                        return 0
+                    fi
+                else
+                    log_warning "Cannot install Docker (requires sudo password)"
+                    return 1
+                fi
             else
                 log_warning "Need sudo to install Docker"
                 return 1
@@ -305,10 +430,62 @@ install_docker() {
     esac
     
     if command -v docker &> /dev/null; then
-        log_success "Docker installed successfully"
+        log_success "Docker is now available"
         return 0
     else
-        log_warning "Docker installation completed but command not found - may need restart"
+        log_warning "Docker installation may have failed or requires a system restart"
+        return 1
+    fi
+}
+
+install_docker_compose() {
+    if command -v docker-compose &> /dev/null; then
+        log_success "docker-compose is already installed: $(docker-compose --version 2>/dev/null | head -n1)"
+        return 0
+    fi
+    
+    # Check if docker compose (v2) is available
+    if docker compose version &> /dev/null 2>&1; then
+        log_success "docker compose (v2) is available via docker"
+        return 0
+    fi
+    
+    log_info "Installing docker-compose..."
+    
+    case "$OS_DETECTED" in
+        ubuntu|debian|pop|fedora|rhel|centos)
+            if [ "$NEED_SUDO" = true ]; then
+                if sudo -n true 2>/dev/null; then
+                    local docker_compose_url="https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)"
+                    if curl -fsSL "$docker_compose_url" -o /tmp/docker-compose 2>/dev/null; then
+                        if sudo mv /tmp/docker-compose /usr/local/bin/docker-compose 2>/dev/null; then
+                            sudo chmod +x /usr/local/bin/docker-compose 2>/dev/null
+                            log_success "docker-compose installed successfully"
+                            return 0
+                        fi
+                    fi
+                else
+                    log_warning "Cannot install docker-compose (requires sudo password)"
+                    return 1
+                fi
+            else
+                log_warning "Need sudo to install docker-compose"
+                return 1
+            fi
+            ;;
+        macos)
+            if brew install docker-compose > /dev/null 2>&1; then
+                log_success "docker-compose installed via brew"
+                return 0
+            fi
+            ;;
+    esac
+    
+    if command -v docker-compose &> /dev/null; then
+        log_success "docker-compose is now available"
+        return 0
+    else
+        log_warning "docker-compose installation may have failed"
         return 1
     fi
 }
@@ -319,17 +496,17 @@ install_system_dependencies() {
     # Update package manager first
     update_package_manager
     
-    # Essential build tools
+    # Essential build tools (optional - npm may still work without them)
     log_info "Installing essential build tools..."
     case "$OS_DETECTED" in
         ubuntu|debian|pop)
-            install_package "build-essential"
-            install_package "python3"
+            install_package "build-essential" || log_warning "build-essential not critical - proceeding anyway"
+            install_package "python3" || true
             ;;
         fedora|rhel|centos)
-            install_package "gcc-c++" "g++"
-            install_package "make"
-            install_package "python3"
+            install_package "gcc-c++" "g++" || log_warning "gcc not critical - proceeding anyway"
+            install_package "make" || true
+            install_package "python3" || true
             ;;
         macos)
             # Xcode command line tools
@@ -341,39 +518,22 @@ install_system_dependencies() {
     esac
     
     # Required command-line tools
-    install_package "curl"
-    install_package "jq"
-    install_package "lsof"
-    install_package "git"
+    log_info "Checking for required tools..."
+    install_package "curl" || log_warning "curl may be needed for some features"
+    install_package "jq" || log_warning "jq not available - JSON parsing may not work"
+    install_package "lsof" || log_warning "lsof not available - port checking may not work"
+    install_package "git" || true
     
     # Install Node.js and npm
     install_nodejs
     
-    # Install Docker (optional)
-    if ! command -v docker &> /dev/null; then
-        log_warning "Docker not found - attempting to install..."
-        install_docker || log_warning "Docker installation skipped - tests will run without database"
-    fi
-    
-    # Install docker-compose
-    if command -v docker &> /dev/null && ! command -v docker-compose &> /dev/null; then
-        log_info "Installing docker-compose..."
-        if [ "$NEED_SUDO" = true ]; then
-            case "$OS_DETECTED" in
-                ubuntu|debian|pop|fedora|rhel|centos)
-                    sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose 2>/dev/null
-                    sudo chmod +x /usr/local/bin/docker-compose 2>/dev/null
-                    ;;
-                macos)
-                    brew install docker-compose > /dev/null 2>&1
-                    ;;
-            esac
-        fi
-        if command -v docker-compose &> /dev/null; then
-            log_success "docker-compose installed"
-        else
-            log_warning "docker-compose installation failed - will use 'docker compose' instead"
-        fi
+    # Install Docker and docker-compose
+    log_info "Installing Docker and docker-compose..."
+    install_docker || log_warning "Docker installation skipped or failed"
+    if command -v docker &> /dev/null; then
+        install_docker_compose || log_warning "docker-compose installation skipped or failed"
+    else
+        log_warning "Skipping docker-compose (Docker not available)"
     fi
     
     echo ""
@@ -423,23 +583,29 @@ start_docker_services() {
         return 0
     fi
     
-    # Check if Docker daemon is running
+    # Determine if we need sudo for docker commands
+    local DOCKER_CMD="docker"
     if ! docker ps &> /dev/null; then
-        log_warning "Docker daemon not running - attempting to start..."
-        case "$OS_DETECTED" in
-            ubuntu|debian|pop|fedora|rhel|centos)
-                if [ "$NEED_SUDO" = true ]; then
-                    sudo systemctl start docker 2>/dev/null || log_error "Failed to start Docker daemon"
-                    sleep 2
-                fi
-                ;;
-        esac
-    fi
-    
-    # Verify Docker is working
-    if ! docker ps &> /dev/null; then
-        log_warning "Docker is not operational - tests will run without database"
-        return 0
+        if sudo docker ps &> /dev/null 2>&1; then
+            DOCKER_CMD="sudo docker"
+            log_info "Using sudo for Docker commands (group permissions not yet active)"
+        else
+            log_warning "Docker daemon not running - attempting to start..."
+            case "$OS_DETECTED" in
+                ubuntu|debian|pop|fedora|rhel|centos)
+                    if [ "$NEED_SUDO" = true ]; then
+                        sudo systemctl start docker 2>/dev/null || log_error "Failed to start Docker daemon"
+                        sleep 3
+                        if sudo docker ps &> /dev/null; then
+                            DOCKER_CMD="sudo docker"
+                        else
+                            log_warning "Docker is not operational - tests will run without database"
+                            return 0
+                        fi
+                    fi
+                    ;;
+            esac
+        fi
     fi
     
     cd "$SCRIPT_DIR"
@@ -451,19 +617,33 @@ start_docker_services() {
     fi
     
     # Check if services are already running
-    if docker ps 2>/dev/null | grep -q "invoice-hub-postgres"; then
+    if $DOCKER_CMD ps 2>/dev/null | grep -q "invoice-hub-postgres"; then
         log_success "PostgreSQL is already running"
     else
         log_info "Starting PostgreSQL and Redis..."
         
-        # Try docker-compose first, then docker compose
+        # Determine docker compose command
+        local COMPOSE_CMD=""
         if command -v docker-compose &> /dev/null; then
-            docker-compose up -d postgres redis 2>/dev/null && DOCKER_STARTED=true
+            COMPOSE_CMD="docker-compose"
+        elif $DOCKER_CMD compose version &> /dev/null 2>&1; then
+            COMPOSE_CMD="$DOCKER_CMD compose"
         else
-            docker compose up -d postgres redis 2>/dev/null && DOCKER_STARTED=true
+            log_warning "docker-compose not available - skipping Docker services"
+            return 0
         fi
         
-        if [ "$DOCKER_STARTED" = true ]; then
+        # Add sudo if needed
+        if [[ "$DOCKER_CMD" == "sudo docker" ]]; then
+            COMPOSE_CMD="sudo docker-compose"
+            if ! command -v docker-compose &> /dev/null; then
+                COMPOSE_CMD="sudo docker compose"
+            fi
+        fi
+        
+        # Start services
+        if $COMPOSE_CMD up -d postgres redis 2>/dev/null; then
+            DOCKER_STARTED=true
             log_info "Waiting for database to be ready..."
             sleep 5
             log_success "Docker services started"
@@ -479,10 +659,20 @@ stop_docker_services() {
     if [ "$DOCKER_STARTED" = true ]; then
         log_info "Stopping Docker services..."
         cd "$SCRIPT_DIR"
+        
+        # Determine compose command with sudo if needed
         if command -v docker-compose &> /dev/null; then
-            docker-compose down 2>/dev/null || true
+            if docker ps &> /dev/null; then
+                docker-compose down 2>/dev/null || true
+            else
+                sudo docker-compose down 2>/dev/null || true
+            fi
         else
-            docker compose down 2>/dev/null || true
+            if docker compose version &> /dev/null 2>&1; then
+                docker compose down 2>/dev/null || true
+            else
+                sudo docker compose down 2>/dev/null || true
+            fi
         fi
         log_success "Docker services stopped"
     fi
@@ -498,12 +688,7 @@ start_backend_server() {
     cd "$BACKEND_DIR"
     
     # Kill any existing server on port 3000
-    log_info "Checking for existing server on port 3000..."
-    if lsof -ti:3000 &> /dev/null; then
-        log_warning "Port 3000 in use - terminating existing process..."
-        lsof -ti:3000 | xargs kill -9 2>/dev/null || true
-        sleep 2
-    fi
+    kill_port 3000 "Backend Server"
     
     # Create temp directory
     mkdir -p "$TEMP_DIR"

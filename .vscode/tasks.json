@@ -2,12 +2,237 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"label": "Start Test Server",
+			"label": "🚀 Start Backend API",
 			"type": "shell",
-			"command": "npm run dev",
+			"command": "cd backend && npm run dev",
 			"isBackground": true,
-			"problemMatcher": [],
-			"group": "none"
+			"problemMatcher": {
+				"pattern": {
+					"regexp": "^(.*)$",
+					"file": 1,
+					"location": 2,
+					"message": 3
+				},
+				"background": {
+					"activeOnStart": true,
+					"beginsPattern": ".*Starting.*",
+					"endsPattern": ".*Server.*running.*|.*listening.*"
+				}
+			},
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "dedicated",
+				"showReuseMessage": false,
+				"clear": true,
+				"group": "servers"
+			},
+			"group": "none",
+			"icon": {
+				"id": "server",
+				"color": "terminal.ansiGreen"
+			}
+		},
+		{
+			"label": "👥 Start Frontend User",
+			"type": "shell",
+			"command": "cd frontend-user && npm run dev",
+			"isBackground": true,
+			"problemMatcher": {
+				"pattern": {
+					"regexp": "^(.*)$",
+					"file": 1,
+					"location": 2,
+					"message": 3
+				},
+				"background": {
+					"activeOnStart": true,
+					"beginsPattern": ".*VITE.*",
+					"endsPattern": ".*Local:.*|.*ready in.*"
+				}
+			},
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "dedicated",
+				"showReuseMessage": false,
+				"clear": true,
+				"group": "servers"
+			},
+			"group": "none",
+			"icon": {
+				"id": "browser",
+				"color": "terminal.ansiBlue"
+			}
+		},
+		{
+			"label": "⚙️ Start Frontend Admin",
+			"type": "shell",
+			"command": "cd frontend-admin && npm run dev",
+			"isBackground": true,
+			"problemMatcher": {
+				"pattern": {
+					"regexp": "^(.*)$",
+					"file": 1,
+					"location": 2,
+					"message": 3
+				},
+				"background": {
+					"activeOnStart": true,
+					"beginsPattern": ".*VITE.*",
+					"endsPattern": ".*Local:.*|.*ready in.*"
+				}
+			},
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "dedicated",
+				"showReuseMessage": false,
+				"clear": true,
+				"group": "servers"
+			},
+			"group": "none",
+			"icon": {
+				"id": "settings-gear",
+				"color": "terminal.ansiMagenta"
+			}
+		},
+		{
+			"label": "🐳 Start Docker Services",
+			"type": "shell",
+			"command": "docker compose up -d postgres redis",
+			"isBackground": false,
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "shared",
+				"showReuseMessage": false,
+				"clear": false,
+				"group": "docker"
+			},
+			"icon": {
+				"id": "server-process",
+				"color": "terminal.ansiCyan"
+			}
+		},
+		{
+			"label": "🛑 Stop Docker Services",
+			"type": "shell",
+			"command": "docker compose down",
+			"isBackground": false,
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "shared",
+				"showReuseMessage": false,
+				"clear": false,
+				"group": "docker"
+			},
+			"icon": {
+				"id": "stop-circle",
+				"color": "terminal.ansiRed"
+			}
+		},
+		{
+			"label": "🌐 Start All Services",
+			"dependsOrder": "sequence",
+			"dependsOn": [
+				"🐳 Start Docker Services",
+				"🚀 Start Backend API",
+				"👥 Start Frontend User",
+				"⚙️ Start Frontend Admin"
+			],
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "shared",
+				"showReuseMessage": false,
+				"clear": true
+			},
+			"icon": {
+				"id": "rocket",
+				"color": "terminal.ansiYellow"
+			}
+		},
+		{
+			"label": "🧪 Run Tests",
+			"type": "shell",
+			"command": "bash run-tests.sh",
+			"isBackground": false,
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": true,
+				"panel": "dedicated",
+				"showReuseMessage": false,
+				"clear": true
+			},
+			"icon": {
+				"id": "beaker",
+				"color": "terminal.ansiGreen"
+			}
+		},
+		{
+			"label": "📦 Install All Dependencies",
+			"dependsOrder": "parallel",
+			"dependsOn": [
+				"📦 Install Backend",
+				"📦 Install Frontend User",
+				"📦 Install Frontend Admin"
+			],
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "shared",
+				"showReuseMessage": false
+			},
+			"icon": {
+				"id": "package",
+				"color": "terminal.ansiCyan"
+			}
+		},
+		{
+			"label": "📦 Install Backend",
+			"type": "shell",
+			"command": "cd backend && npm install",
+			"presentation": {
+				"echo": true,
+				"reveal": "silent",
+				"focus": false,
+				"panel": "shared",
+				"showReuseMessage": false
+			}
+		},
+		{
+			"label": "📦 Install Frontend User",
+			"type": "shell",
+			"command": "cd frontend-user && npm install",
+			"presentation": {
+				"echo": true,
+				"reveal": "silent",
+				"focus": false,
+				"panel": "shared",
+				"showReuseMessage": false
+			}
+		},
+		{
+			"label": "📦 Install Frontend Admin",
+			"type": "shell",
+			"command": "cd frontend-admin && npm install",
+			"presentation": {
+				"echo": true,
+				"reveal": "silent",
+				"focus": false,
+				"panel": "shared",
+				"showReuseMessage": false
+			}
 		}
 	]
 }

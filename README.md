@@ -87,18 +87,63 @@ Invoice-HUB/
 ## 🚦 Quick Start
 
 ### Prerequisites
-- Docker & Docker Compose
-- Node.js 18+ (for local development)
+- Docker & Docker Compose (auto-installed on Linux)
+- Node.js 18+ (auto-installed on Linux)
 - Git
 
-### 1. Clone Repository
+### Option 1: Automated Startup (Recommended)
 
 ```bash
+# Clone repository
 git clone https://github.com/jomardyan/Invoice-HUB.git
 cd Invoice-HUB
+
+# Start all services (auto-installs dependencies)
+bash run-app.sh
+
+# Or with full testing
+bash run-tests.sh
 ```
 
-### 2. Start with Docker Compose
+The scripts will automatically:
+- ✅ Install Node.js, Docker, and dependencies (if needed)
+- ✅ Start PostgreSQL and Redis containers
+- ✅ Launch Backend API (port 3000)
+- ✅ Launch Admin Frontend (port 5174)
+- ✅ Launch User Frontend (port 5173)
+- ✅ Run comprehensive health checks
+
+**Access URLs:**
+- Backend API: `http://localhost:3000`
+- API Docs: `http://localhost:3000/api-docs`
+- Admin Dashboard: `http://localhost:5174`
+- User App: `http://localhost:5173`
+
+**Script Commands:**
+```bash
+# View help
+bash run-app.sh help
+
+# Check service health
+bash run-app.sh health
+
+# View logs
+bash run-app.sh logs backend
+bash run-app.sh logs admin-frontend
+bash run-app.sh logs user-frontend
+
+# Stop all services
+bash run-app.sh stop
+
+# Port management
+bash kill-ports.sh status       # Check port status
+bash kill-ports.sh kill-all     # Free all app ports
+bash kill-ports.sh backend      # Kill backend only
+```
+
+**Note:** The scripts automatically kill any existing processes on required ports before starting services.
+
+### Option 2: Docker Compose
 
 ```bash
 # Start all services (PostgreSQL, Redis, Backend)
@@ -111,28 +156,18 @@ docker-compose logs -f
 docker-compose ps
 ```
 
-The backend API will be available at: `http://localhost:3000`
+### Option 3: VS Code Tasks
 
-**API Endpoints:**
-- Health Check: `http://localhost:3000/api/health`
-- Swagger UI: `http://localhost:3000/api-docs`
-- API v1: `http://localhost:3000/api/v1`
+Press `Ctrl+Shift+P` → "Tasks: Run Task" and select:
+- 🌐 Start All Services
+- 🚀 Start Backend API
+- 👥 Start Frontend User
+- ⚙️ Start Frontend Admin
+- 🐳 Start Docker Services
 
-### 3. Test the API
+See [DEVELOPMENT_WORKFLOW.md](./DEVELOPMENT_WORKFLOW.md) for details.
 
-```bash
-# Run automated test suite
-cd backend
-npm run test:api
-
-# Or run quick smoke test
-npm run test:quick
-
-# Or test manually with curl
-curl http://localhost:3000/api/health
-```
-
-### 4. Manual Setup (Alternative)
+### Option 4: Manual Setup
 
 ```bash
 # Backend setup

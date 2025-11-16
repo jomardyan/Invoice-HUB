@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from '@jest/globals';
-import authReducer, { setAuth, updateAccessToken, logout, setLoading } from '../../store/slices/authSlice';
+import authReducer, { setAuth, updateAccessToken, clearAuth, setLoading } from '../../store/slices/authSlice';
 import type { AuthState } from '../../types';
 
 describe('authSlice', () => {
@@ -16,6 +16,7 @@ describe('authSlice', () => {
             refreshToken: null,
             isAuthenticated: false,
             isLoading: false,
+            error: null,
         };
     });
 
@@ -100,7 +101,7 @@ describe('authSlice', () => {
         expect(localStorage.getItem('accessToken')).toBe('new-token');
     });
 
-    it('should handle logout', () => {
+    it('should handle clearAuth', () => {
         const authenticatedState: AuthState = {
             user: {
                 id: '1',
@@ -123,8 +124,9 @@ describe('authSlice', () => {
         // Set items in localStorage
         localStorage.setItem('accessToken', 'token');
         localStorage.setItem('refreshToken', 'refresh');
+        localStorage.setItem('authState', '{}');
 
-        const newState = authReducer(authenticatedState, logout());
+        const newState = authReducer(authenticatedState, clearAuth());
 
         expect(newState.user).toBe(null);
         expect(newState.tenant).toBe(null);
@@ -135,6 +137,7 @@ describe('authSlice', () => {
         // Check localStorage is cleared
         expect(localStorage.getItem('accessToken')).toBe(null);
         expect(localStorage.getItem('refreshToken')).toBe(null);
+        expect(localStorage.getItem('authState')).toBe(null);
     });
 
     it('should handle setLoading', () => {

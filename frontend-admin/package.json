@@ -4,10 +4,15 @@
     "version": "1.0.0",
     "type": "module",
     "scripts": {
-        "dev": "vite --port 5174",
+        "dev": "vite --host --port 5174 --force",
+        "dev:network": "vite --host 0.0.0.0 --port 5174 --force",
         "build": "tsc -b && vite build",
+        "build:analyze": "vite build --mode analyze",
         "lint": "eslint .",
-        "preview": "vite preview"
+        "lint:fix": "eslint . --fix",
+        "preview": "vite preview --host --port 4174",
+        "type-check": "tsc --noEmit",
+        "clean": "rm -rf dist node_modules/.vite"
     },
     "dependencies": {
         "@emotion/react": "latest",

@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box,
   Button,
   Card,
   CardContent,
-  CardHeader,
   Chip,
   CircularProgress,
   Divider,
@@ -26,13 +25,9 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Badge,
-  LinearProgress,
 } from '@mui/material';
 import {
   Settings as SettingsIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
   Refresh as RefreshIcon,
   CheckCircle as CheckCircleIcon,
   Error as ErrorIcon,

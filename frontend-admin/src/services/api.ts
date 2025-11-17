@@ -1,38 +1,17 @@
-import axios from 'axios';
+/**
+ * API client for admin frontend
+ * Uses shared API client utility for consistency
+ */
+import { createApiClient } from '../../../shared/services/apiClient';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
 
-const api = axios.create({
+const api = createApiClient({
     baseURL: API_BASE_URL,
-    headers: {
-        'Content-Type': 'application/json',
+    tokenStorageKey: 'admin_token',
+    onAuthError: () => {
+        window.location.href = '/login';
     },
 });
-
-// Add auth token to requests
-api.interceptors.request.use(
-    (config) => {
-        const token = localStorage.getItem('admin_token');
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-    },
-    (error) => {
-        return Promise.reject(error);
-    }
-);
-
-// Handle auth errors
-api.interceptors.response.use(
-    (response) => response,
-    (error) => {
-        if (error.response?.status === 401) {
-            localStorage.removeItem('admin_token');
-            window.location.href = '/login';
-        }
-        return Promise.reject(error);
-    }
-);
 
 export default api;

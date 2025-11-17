@@ -1,0 +1,18 @@
+{
+  "name": "@invoice-hub/shared",
+  "version": "1.0.0",
+  "description": "Shared utilities and types for Invoice-HUB frontend applications",
+  "main": "index.ts",
+  "types": "index.ts",
+  "private": true,
+  "scripts": {
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "axios": "latest"
+  },
+  "devDependencies": {
+    "@types/node": "latest",
+    "typescript": "latest"
+  }
+}

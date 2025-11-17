@@ -1,6 +1,8 @@
 import { Box, Typography, Paper, Tabs, Tab } from '@mui/material';
 import { useState } from 'react';
 import AllegroSettings from '../Settings/AllegroSettings';
+import WebhookManagement from './WebhookManagement';
+import ApiKeyManagement from './ApiKeyManagement';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -37,21 +39,11 @@ function Integrations() {
         </TabPanel>
 
         <TabPanel value={tab} index={1}>
-          <Typography variant="h6" gutterBottom>
-            Webhook Management
-          </Typography>
-          <Typography color="text.secondary">
-            Configure webhooks for external integrations
-          </Typography>
+          <WebhookManagement />
         </TabPanel>
 
         <TabPanel value={tab} index={2}>
-          <Typography variant="h6" gutterBottom>
-            API Keys
-          </Typography>
-          <Typography color="text.secondary">
-            Manage API keys for external access
-          </Typography>
+          <ApiKeyManagement />
         </TabPanel>
       </Paper>
     </Box>

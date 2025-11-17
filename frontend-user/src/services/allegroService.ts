@@ -1,45 +1,21 @@
-import axios from 'axios';
+/**
+ * Allegro Service for User Frontend
+ * Uses shared API client and types for consistency
+ */
+import { createApiClient } from '../../../shared/services/apiClient';
+import type {
+  AllegroSettings,
+  AllegroIntegrationStatus,
+  AllegroSyncResult,
+} from '../../../shared/types/allegro';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
 
-// Create axios instance with auth interceptor
-const createAuthenticatedClient = () => {
-  const client = axios.create({
-    baseURL: API_BASE_URL,
-  });
-
-  client.interceptors.request.use((config) => {
-    const token = localStorage.getItem('accessToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  });
-
-  return client;
-};
-
-export interface AllegroSettings {
-  autoGenerateInvoices?: boolean;
-  invoiceTemplateId?: string;
-  syncFrequencyMinutes?: number;
-  autoMarkAsPaid?: boolean;
-  autoCreateCustomer?: boolean;
-  autoCreateProduct?: boolean;
-  defaultVatRate?: number;
-}
-
-export interface AllegroIntegrationStatus {
-  id: string;
-  allegroUserId: string;
-  isActive: boolean;
-  lastSyncAt?: Date;
-  syncErrorCount: number;
-  lastSyncError?: string;
-}
-
 class AllegroService {
-  private api = createAuthenticatedClient();
+  private api = createApiClient({
+    baseURL: API_BASE_URL,
+    tokenStorageKey: 'accessToken',
+  });
 
   /**
    * Get OAuth authorization URL
@@ -89,7 +65,7 @@ class AllegroService {
   /**
    * Manually trigger sync
    */
-  async triggerSync(integrationId: string, companyId: string, tenantId: string) {
+  async triggerSync(integrationId: string, companyId: string, tenantId: string): Promise<AllegroSyncResult> {
     try {
       const response = await this.api.post('/allegro/sync', {
         integrationId,
@@ -156,5 +132,8 @@ class AllegroService {
     }
   }
 }
+
+// Re-export types for backward compatibility
+export type { AllegroSettings, AllegroIntegrationStatus, AllegroSyncResult };
 
 export default new AllegroService();

@@ -1,4 +1,8 @@
 import api from './api';
+import type {
+    AllegroSettings,
+    AllegroIntegrationStatus,
+} from '../../../shared/types/allegro';
 
 export interface PlatformMetrics {
     totalTenants: number;
@@ -196,12 +200,12 @@ const adminService = {
     },
 
     // Allegro Integration Management
-    getAllAllegroIntegrations: async (): Promise<any[]> => {
+    getAllAllegroIntegrations: async (): Promise<AllegroIntegrationStatus[]> => {
         const response = await api.get('/admin/allegro/integrations');
         return response.data;
     },
 
-    getAllegroIntegrationsForTenant: async (tenantId: string): Promise<any[]> => {
+    getAllegroIntegrationsForTenant: async (tenantId: string): Promise<AllegroIntegrationStatus[]> => {
         const response = await api.get(`/admin/allegro/integrations/${tenantId}`);
         return response.data;
     },

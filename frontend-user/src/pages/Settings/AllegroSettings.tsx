@@ -5,35 +5,30 @@ import {
   Card,
   CardContent,
   CardHeader,
-  Checkbox,
   CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   Divider,
-  FormControlLabel,
-  FormGroup,
-  Grid,
-  Paper,
   Stack,
-  TextField,
   Typography,
   Alert,
-  Switch,
-  InputAdornment,
 } from '@mui/material';
 import { useAuth } from '@/hooks/useAuth';
 import allegroService from '../../services/allegroService';
-import type { AllegroSettings } from '../../services/allegroService';
+import type { AllegroSettings, AllegroIntegrationStatus } from '../../services/allegroService';
+import {
+  AllegroSettingsForm,
+  formatAllegroDate,
+} from '../../../../shared';
 import LinkIcon from '@mui/icons-material/Link';
 import SettingsIcon from '@mui/icons-material/Settings';
-import StorageIcon from '@mui/icons-material/Storage';
 import SyncIcon from '@mui/icons-material/Sync';
 
 function AllegroSettingsPage() {
   const { user } = useAuth();
-  const [integrations, setIntegrations] = useState<any[]>([]);
+  const [integrations, setIntegrations] = useState<AllegroIntegrationStatus[]>([]);
   const [selectedIntegration, setSelectedIntegration] = useState<string | null>(null);
   const [integrationSettings, setIntegrationSettings] = useState<AllegroSettings>({});
   const [loading, setLoading] = useState(false);
@@ -82,7 +77,7 @@ function AllegroSettingsPage() {
     loadSettings(integrationId);
   };
 
-  const handleSettingChange = (key: keyof AllegroSettings, value: any) => {
+  const handleSettingChange = (key: keyof AllegroSettings, value: boolean | number) => {
     setIntegrationSettings((prev: AllegroSettings) => ({
       ...prev,
       [key]: value,
@@ -210,135 +205,34 @@ function AllegroSettingsPage() {
           />
           <Divider />
           <CardContent>
-            <Stack spacing={3}>
-              {/* Auto-Generation Settings */}
-              <Box>
-                <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <StorageIcon sx={{ fontSize: 20 }} />
-                  Automatic Processing
-                </Typography>
-                <FormGroup>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={integrationSettings.autoGenerateInvoices ?? true}
-                        onChange={(e) =>
-                          handleSettingChange('autoGenerateInvoices', e.target.checked)
-                        }
-                      />
-                    }
-                    label="Automatically generate invoices from orders"
-                  />
-                  <Typography variant="caption" color="text.secondary" sx={{ ml: 4, mb: 2 }}>
-                    When enabled, invoices will be created automatically when orders are synced
-                  </Typography>
+            <AllegroSettingsForm
+              settings={integrationSettings}
+              onSettingChange={handleSettingChange}
+            />
 
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={integrationSettings.autoCreateCustomer ?? true}
-                        onChange={(e) =>
-                          handleSettingChange('autoCreateCustomer', e.target.checked)
-                        }
-                      />
-                    }
-                    label="Automatically create customers"
-                  />
-                  <Typography variant="caption" color="text.secondary" sx={{ ml: 4, mb: 2 }}>
-                    Create customer records from Allegro buyers
-                  </Typography>
+            <Divider sx={{ my: 3 }} />
 
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={integrationSettings.autoCreateProduct ?? true}
-                        onChange={(e) =>
-                          handleSettingChange('autoCreateProduct', e.target.checked)
-                        }
-                      />
-                    }
-                    label="Automatically create products"
-                  />
-                  <Typography variant="caption" color="text.secondary" sx={{ ml: 4, mb: 2 }}>
-                    Create product records from Allegro offers
-                  </Typography>
-
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={integrationSettings.autoMarkAsPaid ?? false}
-                        onChange={(e) => handleSettingChange('autoMarkAsPaid', e.target.checked)}
-                      />
-                    }
-                    label="Automatically mark invoices as paid"
-                  />
-                  <Typography variant="caption" color="text.secondary" sx={{ ml: 4, mb: 2 }}>
-                    Mark generated invoices as paid if payment is confirmed
-                  </Typography>
-                </FormGroup>
-              </Box>
-
-              <Divider />
-
-              {/* Sync Settings */}
-              <Box>
-                <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <SyncIcon sx={{ fontSize: 20 }} />
-                  Sync Configuration
-                </Typography>
-                <FormGroup>
-                  <TextField
-                    label="Sync Frequency"
-                    type="number"
-                    value={integrationSettings.syncFrequencyMinutes ?? 60}
-                    onChange={(e) =>
-                      handleSettingChange('syncFrequencyMinutes', parseInt(e.target.value))
-                    }
-                    InputProps={{
-                      endAdornment: <InputAdornment position="end">minutes</InputAdornment>,
-                    }}
-                    sx={{ mb: 2 }}
-                    helperText="How often to automatically sync orders with Allegro"
-                  />
-
-                  <TextField
-                    label="Default VAT Rate"
-                    type="number"
-                    value={integrationSettings.defaultVatRate ?? 23}
-                    onChange={(e) => handleSettingChange('defaultVatRate', parseInt(e.target.value))}
-                    InputProps={{
-                      endAdornment: <InputAdornment position="end">%</InputAdornment>,
-                    }}
-                    sx={{ mb: 2 }}
-                    helperText="Default VAT rate for products created from Allegro offers"
-                  />
-                </FormGroup>
-              </Box>
-
-              <Divider />
-
-              {/* Action Buttons */}
-              <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  startIcon={syncLoading ? <CircularProgress size={20} /> : <SyncIcon />}
-                  onClick={handleSync}
-                  disabled={syncLoading}
-                  fullWidth
-                >
-                  {syncLoading ? 'Syncing...' : 'Manual Sync Now'}
-                </Button>
-                <Button
-                  variant="contained"
-                  color="success"
-                  onClick={handleSaveSettings}
-                  disabled={saving}
-                  fullWidth
-                >
-                  {saving ? 'Saving...' : 'Save Settings'}
-                </Button>
-              </Stack>
+            {/* Action Buttons */}
+            <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={syncLoading ? <CircularProgress size={20} /> : <SyncIcon />}
+                onClick={handleSync}
+                disabled={syncLoading}
+                fullWidth
+              >
+                {syncLoading ? 'Syncing...' : 'Manual Sync Now'}
+              </Button>
+              <Button
+                variant="contained"
+                color="success"
+                onClick={handleSaveSettings}
+                disabled={saving}
+                fullWidth
+              >
+                {saving ? 'Saving...' : 'Save Settings'}
+              </Button>
             </Stack>
           </CardContent>
         </Card>

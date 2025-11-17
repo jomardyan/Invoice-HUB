@@ -229,7 +229,7 @@ function KSeFDashboard() {
         columns={columns}
         data={submissions}
         actions={actions}
-        loading={loading}
+        isLoading={loading}
         page={page}
         pageSize={pageSize}
         total={total}

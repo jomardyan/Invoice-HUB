@@ -187,7 +187,7 @@ function ReceiptList() {
         columns={columns}
         data={receipts}
         actions={actions}
-        loading={loading}
+        isLoading={loading}
         page={page}
         pageSize={pageSize}
         total={total}

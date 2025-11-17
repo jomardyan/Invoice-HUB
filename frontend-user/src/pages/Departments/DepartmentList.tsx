@@ -109,7 +109,7 @@ function DepartmentList() {
         columns={columns}
         data={departments}
         actions={actions}
-        loading={loading}
+        isLoading={loading}
         page={page}
         pageSize={pageSize}
         total={total}

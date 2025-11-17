@@ -123,7 +123,7 @@ function WarehouseList() {
         columns={columns}
         data={warehouses}
         actions={actions}
-        loading={loading}
+        isLoading={loading}
         page={page}
         pageSize={pageSize}
         total={total}

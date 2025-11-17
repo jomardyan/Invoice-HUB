@@ -256,7 +256,7 @@ function ExpenseList() {
         columns={columns}
         data={expenses}
         actions={actions}
-        loading={loading}
+        isLoading={loading}
         page={page}
         pageSize={pageSize}
         total={total}

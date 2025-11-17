@@ -194,6 +194,17 @@ const adminService = {
     refreshHealth: async (): Promise<void> => {
         await api.post('/admin/monitoring/refresh');
     },
+
+    // Allegro Integration Management
+    getAllAllegroIntegrations: async (): Promise<any[]> => {
+        const response = await api.get('/admin/allegro/integrations');
+        return response.data;
+    },
+
+    getAllegroIntegrationsForTenant: async (tenantId: string): Promise<any[]> => {
+        const response = await api.get(`/admin/allegro/integrations/${tenantId}`);
+        return response.data;
+    },
 };
 
 export default adminService;

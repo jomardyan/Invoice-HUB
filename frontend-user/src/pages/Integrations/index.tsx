@@ -1,5 +1,6 @@
 import { Box, Typography, Paper, Tabs, Tab } from '@mui/material';
 import { useState } from 'react';
+import AllegroSettings from '../Settings/AllegroSettings';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -32,12 +33,7 @@ function Integrations() {
         </Tabs>
 
         <TabPanel value={tab} index={0}>
-          <Typography variant="h6" gutterBottom>
-            Allegro Integration
-          </Typography>
-          <Typography color="text.secondary">
-            Connect to Allegro marketplace to sync orders and auto-generate invoices
-          </Typography>
+          <AllegroSettings />
         </TabPanel>
 
         <TabPanel value={tab} index={1}>

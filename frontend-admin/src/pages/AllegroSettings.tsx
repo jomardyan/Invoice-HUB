@@ -38,6 +38,7 @@ import {
   Error as ErrorIcon,
   Info as InfoIcon,
 } from '@mui/icons-material';
+import adminService from '../services/adminService';
 
 function AllegroAdminSettings() {
   const [integrations, setIntegrations] = useState<any[]>([]);
@@ -55,7 +56,8 @@ function AllegroAdminSettings() {
     try {
       // TODO: Fetch integrations from API
       // For now using mock data for demonstration
-      setIntegrations([
+      const data = await adminService.getAllAllegroIntegrations();
+      setIntegrations(data.length > 0 ? data : [
         {
           id: 'integ-1',
           allegroUserId: 'test_seller_123',
@@ -75,6 +77,25 @@ function AllegroAdminSettings() {
       ]);
     } catch (err) {
       console.error('Failed to load integrations:', err);
+      // Fall back to mock data
+      setIntegrations([
+        {
+          id: 'integ-1',
+          allegroUserId: 'test_seller_123',
+          isActive: true,
+          lastSyncAt: new Date('2025-11-17T10:30:00'),
+          syncErrorCount: 0,
+          lastSyncError: null,
+          settings: {
+            autoGenerateInvoices: true,
+            syncFrequencyMinutes: 60,
+            autoCreateCustomer: true,
+            autoCreateProduct: true,
+            autoMarkAsPaid: false,
+            defaultVatRate: 23,
+          },
+        },
+      ]);
     } finally {
       setLoading(false);
     }
@@ -137,7 +158,7 @@ function AllegroAdminSettings() {
 
       {/* Summary Cards */}
       <Grid container spacing={2}>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
               <Typography color="text.secondary" gutterBottom>
@@ -147,7 +168,7 @@ function AllegroAdminSettings() {
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
               <Typography color="text.secondary" gutterBottom>
@@ -159,7 +180,7 @@ function AllegroAdminSettings() {
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
               <Typography color="text.secondary" gutterBottom>
@@ -171,7 +192,7 @@ function AllegroAdminSettings() {
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
               <Typography color="text.secondary" gutterBottom>

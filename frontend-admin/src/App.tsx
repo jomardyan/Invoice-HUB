@@ -40,7 +40,7 @@ import {
 } from '@mui/icons-material';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { TenantManagement } from './pages/TenantManagement';
-import { SystemMonitoring } from './pages/SystemMonitoring';
+import SystemMonitoring from './pages/SystemMonitoring';
 import AllegroSettings from './pages/AllegroSettings';
 
 const theme = createTheme({

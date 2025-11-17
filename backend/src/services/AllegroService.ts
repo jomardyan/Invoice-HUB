@@ -638,6 +638,23 @@ export class AllegroService {
       defaultVatRate: settings?.defaultVatRate ?? 23,
     };
   }
+
+  /**
+   * Get all integrations for a tenant
+   */
+  async getIntegrationsByTenant(tenantId: string): Promise<AllegroIntegration[]> {
+    try {
+      const integrationRepo = AppDataSource.getRepository(AllegroIntegration);
+      const integrations = await integrationRepo.find({
+        where: { tenant: { id: tenantId } },
+        relations: ['tenant', 'company'],
+      });
+      return integrations;
+    } catch (error) {
+      logger.error(`[Allegro] Failed to fetch integrations for tenant ${tenantId}:`, error);
+      throw error;
+    }
+  }
 }
 
 export default AllegroService;

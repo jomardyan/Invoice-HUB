@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { Request, Response } from 'express';
 import { AppDataSource } from '../config/database';
 import { Tenant } from '../entities/Tenant';
+import { AllegroIntegration } from '../entities/AllegroIntegration';
 
 const router = Router();
 
@@ -352,6 +353,56 @@ router.get('/monitoring/resources', async (_req: Request, res: Response) => {
         res.json(resources);
     } catch (error) {
         res.status(500).json({ message: 'Failed to fetch resource usage' });
+    }
+});
+
+// Get all Allegro integrations (for admin dashboard)
+router.get('/allegro/integrations', async (_req: Request, res: Response) => {
+    try {
+        const allegroRepo = AppDataSource.getRepository(AllegroIntegration);
+        const integrations = await allegroRepo.find({
+            relations: ['tenant'],
+            order: { createdAt: 'DESC' }
+        });
+
+        const result = integrations.map(i => ({
+            id: i.id,
+            tenantId: i.tenant?.id,
+            tenantName: i.tenant?.name,
+            allegroUserId: i.allegroUserId,
+            isActive: i.isActive,
+            lastSyncAt: i.lastSyncAt,
+            syncErrorCount: i.syncErrorCount || 0,
+            createdAt: i.createdAt
+        }));
+
+        res.json(result);
+    } catch (error) {
+        res.status(500).json({ message: 'Failed to fetch Allegro integrations' });
+    }
+});
+
+// Get Allegro integrations for specific tenant
+router.get('/allegro/integrations/:tenantId', async (req: Request, res: Response) => {
+    try {
+        const { tenantId } = req.params;
+        const allegroRepo = AppDataSource.getRepository(AllegroIntegration);
+        const integrations = await allegroRepo.find({
+            where: { tenant: { id: tenantId } },
+            relations: ['tenant']
+        });
+
+        const result = integrations.map(i => ({
+            id: i.id,
+            allegroUserId: i.allegroUserId,
+            isActive: i.isActive,
+            lastSyncAt: i.lastSyncAt,
+            syncErrorCount: i.syncErrorCount || 0
+        }));
+
+        res.json(result);
+    } catch (error) {
+        res.status(500).json({ message: 'Failed to fetch Allegro integrations' });
     }
 });
 

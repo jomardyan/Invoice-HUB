@@ -1,9 +1,13 @@
 import { Router, Request, Response } from 'express';
 import AllegroService from '@/services/AllegroService';
+import { authMiddleware } from '@/middleware/auth';
 import logger from '@/utils/logger';
 
 const router = Router();
 const allegroService = new AllegroService();
+
+// Apply auth middleware to all routes
+router.use(authMiddleware);
 
 /**
  * GET /allegro/auth/authorize
@@ -184,6 +188,37 @@ router.get('/settings/:integrationId', async (req: Request, res: Response): Prom
   } catch (error) {
     logger.error(`[Allegro Routes] Settings retrieval failed: ${error}`);
     res.status(500).json({ error: 'Failed to retrieve settings' });
+  }
+});
+
+/**
+ * GET /allegro/integrations/:tenantId
+ * Get all integrations for a tenant
+ */
+router.get('/integrations/:tenantId', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { tenantId } = req.params;
+
+    if (!tenantId) {
+      res.status(400).json({ error: 'Missing tenantId parameter' });
+      return;
+    }
+
+    const integrations = await allegroService.getIntegrationsByTenant(tenantId);
+
+    const formattedIntegrations = integrations.map((integration) => ({
+      id: integration.id,
+      allegroUserId: integration.allegroUserId,
+      isActive: integration.isActive,
+      lastSyncAt: integration.lastSyncAt,
+      syncErrorCount: integration.syncErrorCount,
+      lastSyncError: integration.lastSyncError,
+    }));
+
+    res.json(formattedIntegrations);
+  } catch (error) {
+    logger.error(`[Allegro Routes] Failed to fetch integrations: ${error}`);
+    res.status(500).json({ error: 'Failed to fetch integrations' });
   }
 });
 

@@ -24,17 +24,18 @@ import {
   InputAdornment,
 } from '@mui/material';
 import { useAuth } from '@/hooks/useAuth';
-import allegroService, { AllegroSettings } from '@/services/allegroService';
+import allegroService from '../../services/allegroService';
+import type { AllegroSettings } from '../../services/allegroService';
 import LinkIcon from '@mui/icons-material/Link';
 import SettingsIcon from '@mui/icons-material/Settings';
 import StorageIcon from '@mui/icons-material/Storage';
 import SyncIcon from '@mui/icons-material/Sync';
 
-function AllegroSettings() {
+function AllegroSettingsPage() {
   const { user } = useAuth();
   const [integrations, setIntegrations] = useState<any[]>([]);
   const [selectedIntegration, setSelectedIntegration] = useState<string | null>(null);
-  const [settings, setSettings] = useState<AllegroSettings>({});
+  const [integrationSettings, setIntegrationSettings] = useState<AllegroSettings>({});
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,9 +51,9 @@ function AllegroSettings() {
   const loadIntegrations = async () => {
     setLoading(true);
     try {
-      // TODO: Fetch integrations from API
-      // For now, using mock data
-      setIntegrations([]);
+      if (!user?.tenantId) throw new Error('Missing tenant ID');
+      const fetchedIntegrations = await allegroService.getIntegrationsByTenant(user.tenantId);
+      setIntegrations(fetchedIntegrations);
       setError(null);
     } catch (err) {
       setError('Failed to load integrations');
@@ -66,7 +67,7 @@ function AllegroSettings() {
     setLoading(true);
     try {
       const fetchedSettings = await allegroService.getSettings(integrationId);
-      setSettings(fetchedSettings);
+      setIntegrationSettings(fetchedSettings);
       setError(null);
     } catch (err) {
       setError('Failed to load settings');
@@ -82,7 +83,7 @@ function AllegroSettings() {
   };
 
   const handleSettingChange = (key: keyof AllegroSettings, value: any) => {
-    setSettings((prev) => ({
+    setIntegrationSettings((prev: AllegroSettings) => ({
       ...prev,
       [key]: value,
     }));
@@ -93,7 +94,7 @@ function AllegroSettings() {
 
     setSaving(true);
     try {
-      await allegroService.updateSettings(selectedIntegration, settings);
+      await allegroService.updateSettings(selectedIntegration, integrationSettings);
       setSuccess('Settings saved successfully');
       setTimeout(() => setSuccess(null), 3000);
       setError(null);
@@ -220,7 +221,7 @@ function AllegroSettings() {
                   <FormControlLabel
                     control={
                       <Switch
-                        checked={settings.autoGenerateInvoices ?? true}
+                        checked={integrationSettings.autoGenerateInvoices ?? true}
                         onChange={(e) =>
                           handleSettingChange('autoGenerateInvoices', e.target.checked)
                         }
@@ -235,7 +236,7 @@ function AllegroSettings() {
                   <FormControlLabel
                     control={
                       <Switch
-                        checked={settings.autoCreateCustomer ?? true}
+                        checked={integrationSettings.autoCreateCustomer ?? true}
                         onChange={(e) =>
                           handleSettingChange('autoCreateCustomer', e.target.checked)
                         }
@@ -250,7 +251,7 @@ function AllegroSettings() {
                   <FormControlLabel
                     control={
                       <Switch
-                        checked={settings.autoCreateProduct ?? true}
+                        checked={integrationSettings.autoCreateProduct ?? true}
                         onChange={(e) =>
                           handleSettingChange('autoCreateProduct', e.target.checked)
                         }
@@ -265,7 +266,7 @@ function AllegroSettings() {
                   <FormControlLabel
                     control={
                       <Switch
-                        checked={settings.autoMarkAsPaid ?? false}
+                        checked={integrationSettings.autoMarkAsPaid ?? false}
                         onChange={(e) => handleSettingChange('autoMarkAsPaid', e.target.checked)}
                       />
                     }
@@ -289,7 +290,7 @@ function AllegroSettings() {
                   <TextField
                     label="Sync Frequency"
                     type="number"
-                    value={settings.syncFrequencyMinutes ?? 60}
+                    value={integrationSettings.syncFrequencyMinutes ?? 60}
                     onChange={(e) =>
                       handleSettingChange('syncFrequencyMinutes', parseInt(e.target.value))
                     }
@@ -303,7 +304,7 @@ function AllegroSettings() {
                   <TextField
                     label="Default VAT Rate"
                     type="number"
-                    value={settings.defaultVatRate ?? 23}
+                    value={integrationSettings.defaultVatRate ?? 23}
                     onChange={(e) => handleSettingChange('defaultVatRate', parseInt(e.target.value))}
                     InputProps={{
                       endAdornment: <InputAdornment position="end">%</InputAdornment>,
@@ -360,4 +361,4 @@ function AllegroSettings() {
   );
 }
 
-export default AllegroSettings;
+export default AllegroSettingsPage;

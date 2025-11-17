@@ -51,6 +51,9 @@ interface Config {
     sandbox: boolean;
     apiUrl: string;
   };
+  baselinker: {
+    apiUrl: string;
+  };
   encryption: {
     key: string;
     algorithm: string;
@@ -75,6 +78,7 @@ interface Config {
   };
   features: {
     allegroIntegration: boolean;
+    baselinkerIntegration: boolean;
     mfa: boolean;
     webhooks: boolean;
   };
@@ -134,6 +138,10 @@ const config: Config = {
     apiUrl: process.env.ALLEGRO_API_URL || 'https://api.allegro.pl',
   },
 
+  baselinker: {
+    apiUrl: process.env.BASELINKER_API_URL || 'https://api.baselinker.com/connector.php',
+  },
+
   encryption: {
     key: process.env.ENCRYPTION_KEY || 'change-this-32-character-key!!!',
     algorithm: process.env.ENCRYPTION_ALGORITHM || 'aes-256-gcm',
@@ -165,6 +173,7 @@ const config: Config = {
 
   features: {
     allegroIntegration: process.env.FEATURE_ALLEGRO_INTEGRATION === 'true',
+    baselinkerIntegration: process.env.FEATURE_BASELINKER_INTEGRATION === 'true',
     mfa: process.env.FEATURE_MFA === 'true',
     webhooks: process.env.FEATURE_WEBHOOKS === 'true',
   },

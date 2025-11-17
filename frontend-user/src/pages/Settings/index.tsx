@@ -1,6 +1,7 @@
-import { Box, Typography, Paper, Tabs, Tab, Container } from '@mui/material';
+import { Box, Typography, Paper, Tabs, Tab, Container, Stack, Divider } from '@mui/material';
 import { useState } from 'react';
 import AllegroSettings from './AllegroSettings';
+import BaseLinkerSettings from './BaseLinkerSettings';
 import ProfileSettings from './ProfileSettings';
 import CompanySettings from './CompanySettings';
 
@@ -56,7 +57,32 @@ function Settings() {
         </TabPanel>
 
         <TabPanel value={tabValue} index={2}>
-          <AllegroSettings />
+          <Stack spacing={4}>
+            <Box>
+              <Typography variant="h5" gutterBottom fontWeight={600}>
+                Marketplace Integrations
+              </Typography>
+              <Typography variant="body2" color="text.secondary" paragraph>
+                Connect your marketplace accounts to automatically sync orders and generate invoices.
+              </Typography>
+            </Box>
+
+            <Box>
+              <Typography variant="h6" gutterBottom fontWeight={600} color="primary">
+                Allegro Marketplace
+              </Typography>
+              <AllegroSettings />
+            </Box>
+
+            <Divider />
+
+            <Box>
+              <Typography variant="h6" gutterBottom fontWeight={600} color="primary">
+                BaseLinker
+              </Typography>
+              <BaseLinkerSettings />
+            </Box>
+          </Stack>
         </TabPanel>
       </Paper>
     </Container>

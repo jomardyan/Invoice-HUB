@@ -12,6 +12,7 @@ import {
 import { Tenant } from './Tenant';
 import { Invoice } from './Invoice';
 import { AllegroIntegration } from './AllegroIntegration';
+import { BaseLinkerIntegration } from './BaseLinkerIntegration';
 
 export enum UserRole {
   ADMIN = 'admin',
@@ -91,6 +92,9 @@ export class User {
 
   @OneToMany(() => AllegroIntegration, (integration) => integration.user)
   allegroIntegrations: AllegroIntegration[];
+
+  @OneToMany(() => BaseLinkerIntegration, (integration) => integration.user)
+  baselinkerIntegrations: BaseLinkerIntegration[];
 
   @CreateDateColumn()
   createdAt: Date;

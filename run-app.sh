@@ -790,7 +790,7 @@ case "${1:-}" in
         echo "  - Admin Dashboard:   ${BLUE}http://localhost:5174${NC}"
         echo "  - User Application:  ${BLUE}http://localhost:5173${NC}"
         echo ""
-        echo "For more information, see: ${BLUE}DEVELOPMENT_WORKFLOW.md${NC}"
+        echo "For more information, see: ${BLUE}Docs/DEVELOPMENT_WORKFLOW.md${NC}"
         exit 0
         ;;
     "")

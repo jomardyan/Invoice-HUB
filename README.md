@@ -64,7 +64,7 @@ Invoice-HUB/
 │   └── package.json
 │
 ├── docker-compose.yml      # Local development setup
-├── DEVELOPMENT_PLAN.md     # Comprehensive technical spec
+├── Docs/DEVELOPMENT_PLAN.md     # Comprehensive technical spec
 └── README.md              # This file
 ```
 
@@ -175,7 +175,7 @@ Press `Ctrl+Shift+P` → "Tasks: Run Task" and select:
 - ⚙️ Start Frontend Admin
 - 🐳 Start Docker Services
 
-See [DEVELOPMENT_WORKFLOW.md](./DEVELOPMENT_WORKFLOW.md) for details.
+See [DEVELOPMENT_WORKFLOW.md](./Docs/DEVELOPMENT_WORKFLOW.md) for details.
 
 ### Option 4: Manual Setup
 
@@ -194,15 +194,15 @@ npm run dev
 
 ## 📚 Documentation
 
-- **Development Plan**: [DEVELOPMENT_PLAN.md](./DEVELOPMENT_PLAN.md) - Comprehensive technical specifications
+- **Development Plan**: [DEVELOPMENT_PLAN.md](./Docs/DEVELOPMENT_PLAN.md) - Comprehensive technical specifications
 - **Backend README**: [backend/README.md](./backend/README.md) - Setup and development guide
 - **API Endpoints**: [backend/docs/API_ENDPOINTS.md](./backend/docs/API_ENDPOINTS.md) - Complete endpoint documentation with examples
 - **API Summary**: [backend/docs/API_SUMMARY.md](./backend/docs/API_SUMMARY.md) - Quick reference for all 80+ endpoints
 - **OpenAPI Spec**: [backend/docs/openapi.yaml](./backend/docs/openapi.yaml) - Swagger/OpenAPI 3.0 specification
 - **Testing Guide**: [backend/TESTING.md](./backend/TESTING.md) - Automated testing documentation
 - **Swagger UI**: `http://localhost:3000/api-docs` - Interactive API documentation
-- **Allegro Integration**: [ALLEGRO_SETUP_GUIDE.md](./ALLEGRO_SETUP_GUIDE.md) - Allegro marketplace integration guide
-- **BaseLinker Integration**: [BASELINKER_SETUP_GUIDE.md](./BASELINKER_SETUP_GUIDE.md) - BaseLinker integration guide
+- **Allegro Integration**: [ALLEGRO_SETUP_GUIDE.md](./Docs/ALLEGRO_SETUP_GUIDE.md) - Allegro marketplace integration guide
+- **BaseLinker Integration**: [BASELINKER_SETUP_GUIDE.md](./Docs/BASELINKER_SETUP_GUIDE.md) - BaseLinker integration guide
 
 ## 🧪 Testing
 

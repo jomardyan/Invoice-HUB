@@ -554,3 +554,375 @@ Import the Postman collection for easy API testing:
 ## Support
 
 For API support, contact: support@invoice-hub.com
+
+---
+
+## Receipts & E-Receipts
+
+#### POST /:tenantId/receipts
+Create a new receipt.
+
+**Request Body:**
+```json
+{
+  "receiptType": "standard",
+  "issueDate": "2025-11-17",
+  "companyId": "uuid",
+  "customerId": "uuid",
+  "items": [
+    {
+      "name": "Product/Service",
+      "quantity": 1,
+      "unitPrice": 100.00,
+      "vatRate": 23
+    }
+  ],
+  "notes": "Optional notes"
+}
+```
+
+**Receipt Types:**
+- `standard` - Regular receipt
+- `e_receipt` - Electronic receipt
+- `fiscal` - Fiscal printer receipt
+
+**Receipt Statuses:**
+- `draft` - Created but not issued
+- `issued` - Issued to customer
+- `sent` - Sent to customer
+- `cancelled` - Cancelled
+
+#### GET /:tenantId/receipts
+Get all receipts with optional filters.
+
+**Query Parameters:**
+- `status`: Filter by receipt status
+- `receiptType`: Filter by receipt type
+- `startDate`: Filter by date range (start)
+- `endDate`: Filter by date range (end)
+- `page`: Page number (default: 1)
+- `limit`: Items per page (default: 20, max: 100)
+
+#### GET /:tenantId/receipts/:receiptId
+Get receipt details by ID.
+
+#### PUT /:tenantId/receipts/:receiptId
+Update receipt.
+
+#### POST /:tenantId/receipts/:receiptId/issue
+Issue a draft receipt.
+
+#### POST /:tenantId/receipts/:receiptId/cancel
+Cancel a receipt.
+
+#### DELETE /:tenantId/receipts/:receiptId
+Delete a draft receipt.
+
+#### GET /:tenantId/receipts-stats
+Get receipt statistics.
+
+**Query Parameters:**
+- `startDate`: Filter by date range (start)
+- `endDate`: Filter by date range (end)
+
+---
+
+## Expense Management
+
+#### POST /:tenantId/expenses
+Create a new expense.
+
+**Request Body:**
+```json
+{
+  "description": "Office supplies",
+  "category": "office_supplies",
+  "expenseDate": "2025-11-17",
+  "netAmount": 100.00,
+  "vatRate": 23,
+  "vendor": "Supplier Name",
+  "invoiceNumber": "INV-001",
+  "receiptUrl": "https://...",
+  "notes": "Optional notes"
+}
+```
+
+**Expense Categories:**
+- `office_supplies` - Office supplies
+- `utilities` - Utilities
+- `rent` - Rent
+- `transportation` - Transportation
+- `meals` - Meals
+- `equipment` - Equipment
+- `software` - Software
+- `marketing` - Marketing
+- `professional_services` - Professional services
+- `insurance` - Insurance
+- `taxes` - Taxes
+- `other` - Other
+
+**Expense Statuses:**
+- `draft` - Created but not submitted
+- `pending_approval` - Waiting for approval
+- `approved` - Approved
+- `rejected` - Rejected
+- `paid` - Paid
+
+#### GET /:tenantId/expenses
+Get all expenses with optional filters.
+
+**Query Parameters:**
+- `status`: Filter by expense status
+- `category`: Filter by expense category
+- `userId`: Filter by user
+- `startDate`: Filter by date range (start)
+- `endDate`: Filter by date range (end)
+- `page`: Page number (default: 1)
+- `limit`: Items per page (default: 20, max: 100)
+
+#### GET /:tenantId/expenses/:expenseId
+Get expense details by ID.
+
+#### PUT /:tenantId/expenses/:expenseId
+Update expense.
+
+#### POST /:tenantId/expenses/:expenseId/submit
+Submit expense for approval.
+
+#### POST /:tenantId/expenses/:expenseId/approve
+Approve an expense.
+
+#### POST /:tenantId/expenses/:expenseId/reject
+Reject an expense.
+
+#### POST /:tenantId/expenses/:expenseId/pay
+Mark expense as paid.
+
+**Request Body:**
+```json
+{
+  "paymentMethod": "bank_transfer",
+  "paidDate": "2025-11-17"
+}
+```
+
+#### POST /:tenantId/expenses/:expenseId/ocr
+Process OCR data for expense.
+
+**Request Body:**
+```json
+{
+  "vendor": "Extracted vendor name",
+  "amount": 123.00,
+  "date": "2025-11-17",
+  "invoiceNumber": "INV-001",
+  "confidence": 0.95,
+  "rawText": "OCR raw text"
+}
+```
+
+#### DELETE /:tenantId/expenses/:expenseId
+Delete an expense (only if not paid).
+
+#### GET /:tenantId/expenses-stats
+Get expense statistics.
+
+**Query Parameters:**
+- `startDate`: Filter by date range (start)
+- `endDate`: Filter by date range (end)
+
+---
+
+## Warehouse & Inventory Management
+
+#### POST /:tenantId/warehouses
+Create a new warehouse.
+
+**Request Body:**
+```json
+{
+  "code": "WH-001",
+  "name": "Main Warehouse",
+  "type": "main",
+  "address": "123 Storage St",
+  "city": "Warsaw",
+  "postalCode": "00-001",
+  "country": "Poland",
+  "managerId": "uuid",
+  "contactEmail": "warehouse@company.com",
+  "contactPhone": "+48123456789"
+}
+```
+
+**Warehouse Types:**
+- `main` - Main warehouse
+- `branch` - Branch warehouse
+- `virtual` - Virtual/dropshipping warehouse
+- `consignment` - Consignment warehouse
+
+#### GET /:tenantId/warehouses
+Get all warehouses.
+
+**Query Parameters:**
+- `type`: Filter by warehouse type
+- `isActive`: Filter by active status
+- `page`: Page number (default: 1)
+- `limit`: Items per page (default: 20, max: 100)
+
+#### GET /:tenantId/warehouses/:warehouseId
+Get warehouse details.
+
+#### PUT /:tenantId/warehouses/:warehouseId
+Update warehouse.
+
+#### DELETE /:tenantId/warehouses/:warehouseId
+Delete warehouse (only if no stock).
+
+#### POST /:tenantId/warehouses/:warehouseId/stock
+Add stock to warehouse.
+
+**Request Body:**
+```json
+{
+  "productId": "uuid",
+  "quantity": 100,
+  "location": "A-1-5",
+  "minStockLevel": 10,
+  "maxStockLevel": 500
+}
+```
+
+#### GET /:tenantId/warehouses/:warehouseId/stock
+Get warehouse stock.
+
+**Query Parameters:**
+- `lowStock`: Filter low stock items (true/false)
+- `page`: Page number (default: 1)
+- `limit`: Items per page (default: 50, max: 100)
+
+#### GET /:tenantId/warehouses/alerts/low-stock
+Get low stock alerts across all warehouses.
+
+#### GET /:tenantId/warehouses/reports/stock
+Get stock report summary.
+
+---
+
+## Department Management
+
+#### POST /:tenantId/departments
+Create a new department.
+
+**Request Body:**
+```json
+{
+  "name": "Sales",
+  "description": "Sales department",
+  "code": "SALES",
+  "managerId": "uuid",
+  "budgetLimits": {
+    "monthly": 10000,
+    "yearly": 120000,
+    "currency": "PLN"
+  }
+}
+```
+
+#### GET /:tenantId/departments
+Get all departments.
+
+**Query Parameters:**
+- `isActive`: Filter by active status
+- `managerId`: Filter by manager
+- `page`: Page number (default: 1)
+- `limit`: Items per page (default: 20, max: 100)
+
+#### GET /:tenantId/departments/:departmentId
+Get department details.
+
+#### PUT /:tenantId/departments/:departmentId
+Update department.
+
+#### DELETE /:tenantId/departments/:departmentId
+Deactivate department.
+
+#### GET /:tenantId/departments-stats
+Get department statistics.
+
+---
+
+## KSeF Integration (National e-Invoicing System)
+
+#### POST /:tenantId/ksef/config
+Create KSeF configuration.
+
+**Request Body:**
+```json
+{
+  "nip": "1234567890",
+  "token": "ksef_api_token",
+  "isEnabled": true,
+  "autoSubmit": false,
+  "environment": "production",
+  "settings": {
+    "testMode": false,
+    "emailNotifications": true,
+    "autoRetry": true,
+    "maxRetries": 3
+  }
+}
+```
+
+#### GET /:tenantId/ksef/config
+Get KSeF configuration.
+
+#### PUT /:tenantId/ksef/config
+Update KSeF configuration.
+
+#### DELETE /:tenantId/ksef/config
+Delete KSeF configuration.
+
+#### POST /:tenantId/ksef/submit/:invoiceId
+Submit invoice to KSeF.
+
+**Response (201):**
+```json
+{
+  "status": "success",
+  "statusCode": 201,
+  "message": "Invoice submitted to KSeF",
+  "data": {
+    "id": "uuid",
+    "invoiceId": "uuid",
+    "status": "pending",
+    "submittedAt": "2025-11-17T10:00:00Z"
+  }
+}
+```
+
+**KSeF Statuses:**
+- `pending` - Queued for submission
+- `submitted` - Submitted to KSeF
+- `accepted` - Accepted by KSeF
+- `rejected` - Rejected by KSeF
+- `error` - Submission error
+
+#### GET /:tenantId/ksef/submissions/:submissionId
+Get submission status.
+
+#### GET /:tenantId/ksef/submissions
+Get all submissions.
+
+**Query Parameters:**
+- `status`: Filter by submission status
+- `page`: Page number (default: 1)
+- `limit`: Items per page (default: 20, max: 100)
+
+#### GET /:tenantId/ksef/stats
+Get KSeF statistics.
+
+---
+
+## Support
+
+For API support, contact: support@invoice-hub.com

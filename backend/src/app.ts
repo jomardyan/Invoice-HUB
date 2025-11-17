@@ -35,6 +35,11 @@ import allegroRoutes from './routes/allegro';
 import baselinkerRoutes from './routes/baselinker';
 import healthRoutes from './routes/health';
 import adminRoutes from './routes/admin';
+import receiptsRoutes from './routes/receipts';
+import expensesRoutes from './routes/expenses';
+import warehousesRoutes from './routes/warehouses';
+import departmentsRoutes from './routes/departments';
+import ksefRoutes from './routes/ksef';
 import SchedulerService from './services/SchedulerService';
 
 class App {
@@ -138,6 +143,11 @@ class App {
     this.app.use(`/api/${config.apiVersion}/payments`, paymentsRoutes);
     this.app.use(`/api/${config.apiVersion}/allegro`, allegroRoutes);
     this.app.use(`/api/${config.apiVersion}/baselinker`, baselinkerRoutes);
+    this.app.use(`/api/${config.apiVersion}`, receiptsRoutes);
+    this.app.use(`/api/${config.apiVersion}`, expensesRoutes);
+    this.app.use(`/api/${config.apiVersion}`, warehousesRoutes);
+    this.app.use(`/api/${config.apiVersion}`, departmentsRoutes);
+    this.app.use(`/api/${config.apiVersion}`, ksefRoutes);
   }
 
   private initializeErrorHandling(): void {

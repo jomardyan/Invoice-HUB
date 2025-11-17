@@ -40,19 +40,27 @@ function AllegroSettingsPage() {
 
   useEffect(() => {
     // Load integrations and settings
-    loadIntegrations();
-  }, [user]);
+    if (user?.tenantId) {
+      loadIntegrations();
+    }
+  }, [user?.tenantId]);
 
   const loadIntegrations = async () => {
+    if (!user?.tenantId) {
+      console.warn('Cannot load integrations: missing tenantId');
+      return;
+    }
+    
     setLoading(true);
+    setError(null);
     try {
-      if (!user?.tenantId) throw new Error('Missing tenant ID');
       const fetchedIntegrations = await allegroService.getIntegrationsByTenant(user.tenantId);
       setIntegrations(fetchedIntegrations);
-      setError(null);
-    } catch (err) {
-      setError('Failed to load integrations');
-      console.error(err);
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.error || err.message || 'Failed to load integrations';
+      setError(errorMessage);
+      console.error('Failed to load integrations:', err);
+      setIntegrations([]);
     } finally {
       setLoading(false);
     }
@@ -60,13 +68,14 @@ function AllegroSettingsPage() {
 
   const loadSettings = async (integrationId: string) => {
     setLoading(true);
+    setError(null);
     try {
       const fetchedSettings = await allegroService.getSettings(integrationId);
       setIntegrationSettings(fetchedSettings);
-      setError(null);
-    } catch (err) {
-      setError('Failed to load settings');
-      console.error(err);
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.error || err.message || 'Failed to load settings';
+      setError(errorMessage);
+      console.error('Failed to load settings:', err);
     } finally {
       setLoading(false);
     }
@@ -85,50 +94,70 @@ function AllegroSettingsPage() {
   };
 
   const handleSaveSettings = async () => {
-    if (!selectedIntegration) return;
+    if (!selectedIntegration) {
+      setError('No integration selected');
+      return;
+    }
 
     setSaving(true);
+    setError(null);
     try {
       await allegroService.updateSettings(selectedIntegration, integrationSettings);
       setSuccess('Settings saved successfully');
       setTimeout(() => setSuccess(null), 3000);
-      setError(null);
-    } catch (err) {
-      setError('Failed to save settings');
-      console.error(err);
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.error || err.message || 'Failed to save settings';
+      setError(errorMessage);
+      console.error('Failed to save settings:', err);
     } finally {
       setSaving(false);
     }
   };
 
   const handleSync = async () => {
-    if (!selectedIntegration || !user?.tenantId) return;
+    if (!selectedIntegration) {
+      setError('No integration selected');
+      return;
+    }
+    
+    if (!user?.tenantId) {
+      setError('Missing tenant information');
+      return;
+    }
 
     setSyncLoading(true);
+    setError(null);
     try {
       const result = await allegroService.triggerSync(
         selectedIntegration,
         user.companyId || '',
         user.tenantId
       );
-      setSuccess(`Sync completed: ${result.invoicesCreated} invoices created`);
+      setSuccess(`Sync completed: ${result.invoicesCreated || 0} invoices created`);
       setTimeout(() => setSuccess(null), 3000);
-    } catch (err) {
-      setError('Failed to trigger sync');
-      console.error(err);
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.error || err.message || 'Failed to trigger sync';
+      setError(errorMessage);
+      console.error('Failed to trigger sync:', err);
     } finally {
       setSyncLoading(false);
     }
   };
 
   const handleConnectClick = async () => {
+    if (!user?.tenantId) {
+      setError('Missing tenant information. Please log in again.');
+      return;
+    }
+    
+    setError(null);
     try {
-      if (!user?.tenantId) throw new Error('Missing tenant ID');
       const authUrl = await allegroService.getAuthorizationUrl(user.tenantId);
       window.location.href = authUrl;
-    } catch (err) {
-      setError('Failed to initiate Allegro connection');
-      console.error(err);
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.error || err.message || 'Failed to initiate Allegro connection';
+      setError(errorMessage);
+      console.error('Failed to initiate Allegro connection:', err);
     }
   };
 

@@ -65,4 +65,33 @@ test.describe('Warehouse Management', () => {
     // Type column should show chips
     await expect(page.locator('text=Type')).toBeVisible();
   });
+
+  test('action buttons should be enabled', async ({ page }) => {
+    await page.goto('/warehouses');
+    
+    const addButton = page.locator('button:has-text("Add Warehouse")');
+    await expect(addButton).toBeEnabled();
+  });
+
+  test('should load warehouses from API', async ({ page }) => {
+    const responsePromise = page.waitForResponse(response => 
+      response.url().includes('/warehouses') && response.status() === 200,
+      { timeout: 15000 }
+    );
+    
+    await page.goto('/warehouses');
+    
+    const response = await responsePromise;
+    expect(response.ok()).toBeTruthy();
+  });
+
+  test('search functionality should work', async ({ page }) => {
+    await page.goto('/warehouses');
+    
+    const searchInput = page.locator('input[placeholder*="Search" i], input[type="search"]').first();
+    if (await searchInput.isVisible()) {
+      await searchInput.fill('test warehouse');
+      await expect(searchInput).toHaveValue('test warehouse');
+    }
+  });
 });

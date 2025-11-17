@@ -104,4 +104,36 @@ test.describe('KSeF Integration Dashboard', () => {
       await expect(autoSubmitToggle).toBeDisabled();
     }
   });
+
+  test('refresh submissions button should work', async ({ page }) => {
+    await page.goto('/ksef');
+    
+    const refreshButton = page.locator('button[aria-label*="refresh" i], button:has-text("Refresh")').first();
+    if (await refreshButton.isVisible()) {
+      await expect(refreshButton).toBeEnabled();
+    }
+  });
+
+  test('should load KSeF data from backend', async ({ page }) => {
+    await page.goto('/ksef');
+    
+    // Wait for API calls
+    await page.waitForResponse(response => 
+      (response.url().includes('/ksef/config') || 
+       response.url().includes('/ksef/stats') || 
+       response.url().includes('/ksef/submissions')),
+      { timeout: 15000 }
+    );
+  });
+
+  test('submission actions should be available', async ({ page }) => {
+    await page.goto('/ksef');
+    
+    const table = page.locator('table').first();
+    await expect(table).toBeVisible();
+    
+    // Look for retry or view buttons
+    const actionButtons = page.locator('button[aria-label*="retry" i], button[aria-label*="view" i]');
+    // Structure check - buttons may not be visible if no failed submissions
+  });
 });

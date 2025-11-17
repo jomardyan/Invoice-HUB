@@ -75,4 +75,38 @@ test.describe('Receipts Management', () => {
     const table = page.locator('table').first();
     await expect(table).toBeVisible();
   });
+
+  test('status tabs should be clickable', async ({ page }) => {
+    await page.goto('/receipts');
+    
+    // Each tab should be clickable
+    const allTab = page.locator('button[role="tab"]:has-text("All")');
+    await expect(allTab).toBeEnabled();
+    
+    const draftTab = page.locator('button[role="tab"]:has-text("Draft")');
+    await expect(draftTab).toBeEnabled();
+    
+    const issuedTab = page.locator('button[role="tab"]:has-text("Issued")');
+    await expect(issuedTab).toBeEnabled();
+  });
+
+  test('should handle empty receipts list', async ({ page }) => {
+    await page.goto('/receipts');
+    
+    // Table should be visible even when empty
+    const table = page.locator('table').first();
+    await expect(table).toBeVisible();
+  });
+
+  test('should load receipts from API', async ({ page }) => {
+    const responsePromise = page.waitForResponse(response => 
+      response.url().includes('/receipts') && response.status() === 200,
+      { timeout: 15000 }
+    );
+    
+    await page.goto('/receipts');
+    
+    const response = await responsePromise;
+    expect(response.ok()).toBeTruthy();
+  });
 });

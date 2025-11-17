@@ -13,6 +13,12 @@ export type {
   AllegroSyncResult,
 } from './types/allegro';
 
+export type {
+  BaseLinkerSettings,
+  BaseLinkerIntegrationStatus,
+  BaseLinkerSyncResult,
+} from './types/baselinker';
+
 // Components
 export {
   AllegroSettingsForm,

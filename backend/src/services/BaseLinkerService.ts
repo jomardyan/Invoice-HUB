@@ -70,7 +70,6 @@ export interface BaseLinkerSettings {
 
 export class BaseLinkerService {
   private baselinkerRepository: Repository<BaseLinkerIntegration>;
-  private invoiceRepository: Repository<Invoice>;
   private customerRepository: Repository<Customer>;
   private productRepository: Repository<Product>;
   private invoiceService: InvoiceService;
@@ -82,7 +81,6 @@ export class BaseLinkerService {
 
   constructor() {
     this.baselinkerRepository = AppDataSource.getRepository(BaseLinkerIntegration);
-    this.invoiceRepository = AppDataSource.getRepository(Invoice);
     this.customerRepository = AppDataSource.getRepository(Customer);
     this.productRepository = AppDataSource.getRepository(Product);
     this.invoiceService = new InvoiceService();
@@ -245,7 +243,7 @@ export class BaseLinkerService {
         // Reset error count on success
         await this.baselinkerRepository.update(integrationId, {
           syncErrorCount: 0,
-          lastSyncError: null,
+          lastSyncError: undefined,
         });
 
         return result;
@@ -395,10 +393,10 @@ export class BaseLinkerService {
           email: order.email || '',
           phone: order.phone || '',
           type: CustomerType.INDIVIDUAL,
-          address: order.delivery_address || '',
-          city: order.delivery_city || '',
-          postalCode: order.delivery_postcode || '',
-          country: order.delivery_country_code || 'PL',
+          billingAddress: order.delivery_address || '',
+          billingCity: order.delivery_city || '',
+          billingPostalCode: order.delivery_postcode || '',
+          billingCountry: order.delivery_country_code || 'PL',
           isActive: true,
         });
 
@@ -480,33 +478,29 @@ export class BaseLinkerService {
           });
 
           return {
-            productId: product?.id,
+            productId: product?.id || undefined,
             description: item.name,
             quantity: item.quantity,
             unitPrice: item.price_brutto,
             vatRate: item.tax_rate || settings.defaultVatRate || 23,
-            discount: 0,
+            discountPercent: 0,
           };
         })
       );
 
       const invoiceData: InvoiceCreateInput = {
-        tenantId,
         companyId,
         customerId: customer.id,
-        type: InvoiceType.INVOICE,
+        invoiceType: InvoiceType.STANDARD,
         issueDate: new Date(order.date_add * 1000),
         dueDate: new Date(order.date_add * 1000 + 14 * 24 * 60 * 60 * 1000), // 14 days
-        currency: order.currency || 'PLN',
         items,
         notes: `BaseLinker Order: ${order.shop_order_id || order.external_order_id || order.order_id}`,
         internalNotes: `BaseLinker Order ID: ${order.order_id}`,
-        templateId: settings.invoiceTemplateId,
         paymentMethod: order.payment_method || 'transfer',
-        paid: order.payment_done === 1 && settings.autoMarkAsPaid,
       };
 
-      const invoice = await this.invoiceService.createInvoice(invoiceData);
+      const invoice = await this.invoiceService.createInvoice(tenantId, invoiceData);
 
       logger.info(
         `[BaseLinker] Generated invoice ${invoice.invoiceNumber} for order ${order.order_id}`

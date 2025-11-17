@@ -78,6 +78,7 @@ interface Config {
   };
   features: {
     allegroIntegration: boolean;
+    baselinkerIntegration: boolean;
     mfa: boolean;
     webhooks: boolean;
   };

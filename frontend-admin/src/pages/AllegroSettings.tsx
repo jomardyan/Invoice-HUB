@@ -16,11 +16,8 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  TextField,
   Typography,
   Alert,
-  Switch,
-  FormControlLabel,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -29,18 +26,23 @@ import {
 import {
   Settings as SettingsIcon,
   Refresh as RefreshIcon,
-  CheckCircle as CheckCircleIcon,
-  Error as ErrorIcon,
   Info as InfoIcon,
 } from '@mui/icons-material';
 import adminService from '../services/adminService';
+import {
+  AllegroSettingsForm,
+  AllegroStatusChip,
+  formatAllegroDate,
+  type AllegroIntegrationStatus,
+  type AllegroSettings,
+} from '../../../shared';
 
 function AllegroAdminSettings() {
-  const [integrations, setIntegrations] = useState<any[]>([]);
+  const [integrations, setIntegrations] = useState<AllegroIntegrationStatus[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selectedIntegration, setSelectedIntegration] = useState<any | null>(null);
+  const [selectedIntegration, setSelectedIntegration] = useState<AllegroIntegrationStatus | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
-  const [editingSettings, setEditingSettings] = useState<any>({});
+  const [editingSettings, setEditingSettings] = useState<AllegroSettings>({});
 
   useEffect(() => {
     loadIntegrations();
@@ -96,14 +98,13 @@ function AllegroAdminSettings() {
     }
   };
 
-  const handleEditClick = (integration: any) => {
+  const handleEditClick = (integration: AllegroIntegrationStatus) => {
     setSelectedIntegration(integration);
     setEditingSettings({ ...integration.settings });
     setOpenDialog(true);
   };
 
   const handleSaveSettings = async () => {
-    // TODO: Call API to save settings
     console.log('Saving settings for', selectedIntegration?.id, editingSettings);
     setOpenDialog(false);
   };
@@ -112,19 +113,8 @@ function AllegroAdminSettings() {
     console.log('Refreshing sync for', integrationId);
   };
 
-  const getStatusChip = (integration: any) => {
-    if (!integration.isActive) {
-      return <Chip label="Inactive" color="default" variant="outlined" />;
-    }
-    if (integration.syncErrorCount > 3) {
-      return <Chip icon={<ErrorIcon />} label="Errors" color="error" />;
-    }
-    return <Chip icon={<CheckCircleIcon />} label="Active" color="success" />;
-  };
-
-  const formatDate = (date: Date | null | undefined) => {
-    if (!date) return '-';
-    return new Date(date).toLocaleString();
+  const handleSettingChange = (key: keyof AllegroSettings, value: boolean | number) => {
+    setEditingSettings((prev) => ({ ...prev, [key]: value }));
   };
 
   if (loading) {
@@ -195,7 +185,7 @@ function AllegroAdminSettings() {
               </Typography>
               <Typography variant="body2">
                 {integrations.length > 0
-                  ? formatDate(integrations[0].lastSyncAt)
+                  ? formatAllegroDate(integrations[0].lastSyncAt)
                   : 'Never'}
               </Typography>
             </CardContent>
@@ -234,8 +224,8 @@ function AllegroAdminSettings() {
                       {integration.allegroUserId}
                     </Typography>
                   </TableCell>
-                  <TableCell>{getStatusChip(integration)}</TableCell>
-                  <TableCell>{formatDate(integration.lastSyncAt)}</TableCell>
+                  <TableCell>{<AllegroStatusChip integration={integration} />}</TableCell>
+                  <TableCell>{formatAllegroDate(integration.lastSyncAt)}</TableCell>
                   <TableCell>
                     {integration.syncErrorCount > 0 ? (
                       <Chip
@@ -283,88 +273,10 @@ function AllegroAdminSettings() {
         </DialogTitle>
         <Divider />
         <DialogContent sx={{ pt: 3 }}>
-          <Stack spacing={2}>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={editingSettings.autoGenerateInvoices ?? true}
-                  onChange={(e) =>
-                    setEditingSettings({
-                      ...editingSettings,
-                      autoGenerateInvoices: e.target.checked,
-                    })
-                  }
-                />
-              }
-              label="Auto-generate invoices"
-            />
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={editingSettings.autoCreateCustomer ?? true}
-                  onChange={(e) =>
-                    setEditingSettings({
-                      ...editingSettings,
-                      autoCreateCustomer: e.target.checked,
-                    })
-                  }
-                />
-              }
-              label="Auto-create customers"
-            />
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={editingSettings.autoCreateProduct ?? true}
-                  onChange={(e) =>
-                    setEditingSettings({
-                      ...editingSettings,
-                      autoCreateProduct: e.target.checked,
-                    })
-                  }
-                />
-              }
-              label="Auto-create products"
-            />
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={editingSettings.autoMarkAsPaid ?? false}
-                  onChange={(e) =>
-                    setEditingSettings({
-                      ...editingSettings,
-                      autoMarkAsPaid: e.target.checked,
-                    })
-                  }
-                />
-              }
-              label="Auto mark as paid"
-            />
-            <TextField
-              label="Sync Frequency (minutes)"
-              type="number"
-              value={editingSettings.syncFrequencyMinutes ?? 60}
-              onChange={(e) =>
-                setEditingSettings({
-                  ...editingSettings,
-                  syncFrequencyMinutes: parseInt(e.target.value),
-                })
-              }
-              fullWidth
-            />
-            <TextField
-              label="Default VAT Rate (%)"
-              type="number"
-              value={editingSettings.defaultVatRate ?? 23}
-              onChange={(e) =>
-                setEditingSettings({
-                  ...editingSettings,
-                  defaultVatRate: parseInt(e.target.value),
-                })
-              }
-              fullWidth
-            />
-          </Stack>
+          <AllegroSettingsForm
+            settings={editingSettings}
+            onSettingChange={handleSettingChange}
+          />
         </DialogContent>
         <Divider />
         <DialogActions>

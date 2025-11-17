@@ -8,11 +8,17 @@
   "scripts": {
     "type-check": "tsc --noEmit"
   },
+  "peerDependencies": {
+    "react": "^18.0.0",
+    "@mui/material": "^5.0.0",
+    "@mui/icons-material": "^5.0.0"
+  },
   "dependencies": {
     "axios": "latest"
   },
   "devDependencies": {
     "@types/node": "latest",
+    "@types/react": "latest",
     "typescript": "latest"
   }
 }

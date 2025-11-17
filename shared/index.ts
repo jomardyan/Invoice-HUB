@@ -12,3 +12,14 @@ export type {
   AllegroIntegrationStatus,
   AllegroSyncResult,
 } from './types/allegro';
+
+// Components
+export {
+  AllegroSettingsForm,
+  AllegroStatusChip,
+  formatAllegroDate,
+} from './components/Allegro';
+export type {
+  AllegroSettingsFormProps,
+  AllegroStatusChipProps,
+} from './components/Allegro';

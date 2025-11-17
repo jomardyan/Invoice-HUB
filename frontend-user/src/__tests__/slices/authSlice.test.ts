@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from '@jest/globals';
 import authReducer, { setAuth, updateAccessToken, clearAuth, setLoading } from '../../store/slices/authSlice';
 import type { AuthState } from '../../types';
+import { UserRole, SubscriptionTier } from '../../types';
 
 describe('authSlice', () => {
     let initialState: AuthState;
@@ -28,15 +29,24 @@ describe('authSlice', () => {
         const mockUser = {
             id: '1',
             email: 'test@example.com',
-            name: 'Test User',
-            role: 'admin' as const,
+            firstName: 'Test',
+            lastName: 'User',
+            role: UserRole.ADMIN,
+            isActive: true,
             tenantId: 'tenant-1',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
         };
 
         const mockTenant = {
             id: 'tenant-1',
             name: 'Test Company',
-            subscriptionTier: 'basic' as const,
+            subscriptionTier: SubscriptionTier.BASIC,
+            subscriptionStatus: 'active' as const,
+            monthlyInvoiceLimit: 100,
+            currentMonthInvoices: 0,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
         };
 
         const payload = {
@@ -64,15 +74,24 @@ describe('authSlice', () => {
         const mockUser = {
             id: '1',
             email: 'test@example.com',
-            name: 'Test User',
-            role: 'user' as const,
+            firstName: 'Test',
+            lastName: 'User',
+            role: UserRole.USER,
+            isActive: true,
             tenantId: 'tenant-1',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
         };
 
         const mockTenant = {
             id: 'tenant-1',
             name: 'Test Company',
-            subscriptionTier: 'free' as const,
+            subscriptionTier: SubscriptionTier.FREE,
+            subscriptionStatus: 'trial' as const,
+            monthlyInvoiceLimit: 10,
+            currentMonthInvoices: 0,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
         };
 
         const payload = {
@@ -106,19 +125,29 @@ describe('authSlice', () => {
             user: {
                 id: '1',
                 email: 'test@example.com',
-                name: 'Test User',
-                role: 'admin',
+                firstName: 'Test',
+                lastName: 'User',
+                role: UserRole.ADMIN,
+                isActive: true,
                 tenantId: 'tenant-1',
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
             },
             tenant: {
                 id: 'tenant-1',
                 name: 'Test Company',
-                subscriptionTier: 'basic',
+                subscriptionTier: SubscriptionTier.BASIC,
+                subscriptionStatus: 'active' as const,
+                monthlyInvoiceLimit: 100,
+                currentMonthInvoices: 0,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
             },
             accessToken: 'token',
             refreshToken: 'refresh',
             isAuthenticated: true,
             isLoading: false,
+            error: null,
         };
 
         // Set items in localStorage

@@ -32,6 +32,7 @@ import reportsRoutes from './routes/reports';
 import webhooksRoutes from './routes/webhooks';
 import paymentsRoutes from './routes/payments';
 import allegroRoutes from './routes/allegro';
+import baselinkerRoutes from './routes/baselinker';
 import healthRoutes from './routes/health';
 import adminRoutes from './routes/admin';
 import SchedulerService from './services/SchedulerService';
@@ -136,6 +137,7 @@ class App {
     this.app.use(`/api/${config.apiVersion}/webhooks`, webhooksRoutes);
     this.app.use(`/api/${config.apiVersion}/payments`, paymentsRoutes);
     this.app.use(`/api/${config.apiVersion}/allegro`, allegroRoutes);
+    this.app.use(`/api/${config.apiVersion}/baselinker`, baselinkerRoutes);
   }
 
   private initializeErrorHandling(): void {

@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { body, param, query, validationResult } from 'express-validator';
+import { body, param, validationResult } from 'express-validator';
 import { authMiddleware, requireTenant } from '../middleware/auth';
 import { ReceiptService } from '../services/ReceiptService';
 import { ReceiptType, ReceiptStatus } from '../entities/Receipt';

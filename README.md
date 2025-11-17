@@ -15,19 +15,28 @@ Save 20+ hours per week by automating invoice creation, multi-channel delivery, 
 - ✅ **Powerful Export Engine** - PDF, Excel, XML (JPK_FA), JSON, EDI
 - ✅ **Polish VAT Compliance** - 23%/8%/5%/0%, reverse charge, VIES validation
 - ✅ **Database-Driven Intelligence** - Product catalog, customer management, tax engine
+- ✅ **KSeF Integration** - National e-Invoicing System submission and tracking
+- ✅ **Receipts & E-Receipts** - Fiscal and electronic receipt management with QR codes
+- ✅ **Expense Management** - OCR-powered expense tracking with approval workflows
+- ✅ **Warehouse Management** - Multi-warehouse inventory with stock tracking
+- ✅ **Department Management** - Multi-department support with budget tracking
 
 ### Advanced Features
 - 🔐 Role-based access control (Owner, Admin, Manager, Accountant, Viewer)
 - 📊 Real-time analytics and reporting (Dashboard, Sales, Tax, Customer reports)
 - 🎨 Customizable invoice templates (Handlebars-based with live preview)
 - 🔄 Recurring invoice automation via scheduler
-- 🌐 RESTful API with 80+ endpoints
+- 🌐 RESTful API with 120+ endpoints
 - 🌍 Multi-language support (Polish, English)
 - 💱 Multi-currency support (PLN, EUR, USD)
 - 🔒 Enterprise-grade security (encryption, audit logs, rate limiting)
 - 🔔 Real-time notifications (Email, SMS, In-app)
 - 🔗 Webhook subscriptions for event-driven integrations
 - 📤 Multiple export formats (PDF, Excel, CSV, XML/JPK_FA, JSON)
+- 🏢 Warehouse & inventory management with low-stock alerts
+- 💰 Expense tracking with OCR and approval workflows
+- 🧾 Receipt management (standard, e-receipt, fiscal)
+- 🏛️ KSeF integration for Polish e-invoicing compliance
 
 ## 📁 Project Structure
 
@@ -322,11 +331,11 @@ Target: **80%+ code coverage**
 - [ ] End-user documentation (guides, tutorials)
 
 ### 📊 Current Statistics
-- **Total Endpoints:** 86+
-- **Database Tables:** 12
-- **Services:** 19
-- **Routes:** 14
-- **Test Coverage:** Health, Auth, Companies, Customers, Products, Invoices, Payments, Templates, Notifications, Reports, Webhooks, Scheduler, Allegro, BaseLinker
+- **Total Endpoints:** 120+
+- **Database Tables:** 17
+- **Services:** 24
+- **Routes:** 19
+- **Test Coverage:** Health, Auth, Companies, Customers, Products, Invoices, Payments, Templates, Notifications, Reports, Webhooks, Scheduler, Allegro, BaseLinker, Receipts, Expenses, Warehouses, Departments, KSeF
 - **API Documentation:** Complete (OpenAPI 3.0)
 
 See [DEVELOPMENT_PLAN.md](./DEVELOPMENT_PLAN.md) for detailed implementation roadmap.

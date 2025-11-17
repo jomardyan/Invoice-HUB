@@ -21,7 +21,7 @@ export enum KSeFStatus {
 
 @Entity('ksef_submissions')
 @Index(['tenantId', 'invoiceId'])
-@Index(['ksefReferenceNumber'], { unique: true, where: 'ksefReferenceNumber IS NOT NULL' })
+@Index(['ksefReferenceNumber'], { unique: true, where: '"ksefReferenceNumber" IS NOT NULL' })
 export class KSeFSubmission {
   @PrimaryGeneratedColumn('uuid')
   id: string;

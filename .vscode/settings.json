@@ -35,4 +35,21 @@
   },
   "github.copilot.chat.agentManagement.autoApprove": true,
   "github.copilot.chat.agentManagement.autoApproveTrusted": true
+  ,
+  "terminal.integrated.profiles.linux": {
+    "bash (with oh-my-posh)": {
+      "path": "/bin/bash",
+      "args": ["-l"],
+      "icon": "terminal-bash"
+    }
+  },
+  "terminal.integrated.defaultProfile.linux": "bash (with oh-my-posh)"
+  ,
+  "terminal.integrated.fontFamily": "MesloLGM Nerd Font, monospace"
+  ,
+  "terminal.integrated.fontSize": 14
+  ,
+  "editor.fontFamily": "MesloLGM Nerd Font Mono, MesloLGM Nerd Font, monospace"
+  ,
+  "editor.fontLigatures": true
 }

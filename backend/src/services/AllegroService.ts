@@ -64,6 +64,16 @@ export interface AllegroSyncResult {
   errors: string[];
 }
 
+export interface AllegroSettings {
+  autoGenerateInvoices?: boolean;
+  invoiceTemplateId?: string;
+  syncFrequencyMinutes?: number;
+  autoMarkAsPaid?: boolean;
+  autoCreateCustomer?: boolean;
+  autoCreateProduct?: boolean;
+  defaultVatRate?: number;
+}
+
 export class AllegroService {
   private allegroRepository: Repository<AllegroIntegration>;
   private invoiceRepository: Repository<Invoice>;
@@ -581,6 +591,52 @@ export class AllegroService {
       await this.allegroRepository.save(integration);
       logger.info(`[Allegro] Integration ${integrationId} deactivated`);
     }
+  }
+
+  /**
+   * Get integration settings
+   */
+  async getSettings(integrationId: string): Promise<AllegroSettings | null> {
+    const integration = await this.allegroRepository.findOne({ where: { id: integrationId } });
+    return integration?.settings || null;
+  }
+
+  /**
+   * Update integration settings
+   */
+  async updateSettings(integrationId: string, settings: Partial<AllegroSettings>): Promise<AllegroSettings> {
+    const integration = await this.allegroRepository.findOne({ where: { id: integrationId } });
+
+    if (!integration) {
+      throw new Error('Integration not found');
+    }
+
+    integration.settings = {
+      ...integration.settings,
+      ...settings,
+    };
+
+    await this.allegroRepository.save(integration);
+    logger.info(`[Allegro] Settings updated for integration: ${integrationId}`);
+
+    return integration.settings as AllegroSettings;
+  }
+
+  /**
+   * Get settings with defaults
+   */
+  async getSettingsWithDefaults(integrationId: string): Promise<AllegroSettings> {
+    const settings = await this.getSettings(integrationId);
+
+    return {
+      autoGenerateInvoices: settings?.autoGenerateInvoices ?? true,
+      invoiceTemplateId: settings?.invoiceTemplateId,
+      syncFrequencyMinutes: settings?.syncFrequencyMinutes ?? 60,
+      autoMarkAsPaid: settings?.autoMarkAsPaid ?? false,
+      autoCreateCustomer: settings?.autoCreateCustomer ?? true,
+      autoCreateProduct: settings?.autoCreateProduct ?? true,
+      defaultVatRate: settings?.defaultVatRate ?? 23,
+    };
   }
 }
 

@@ -36,10 +36,12 @@ import {
     Person,
     Settings,
     Logout,
+    IntegrationInstructions,
 } from '@mui/icons-material';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { TenantManagement } from './pages/TenantManagement';
 import { SystemMonitoring } from './pages/SystemMonitoring';
+import AllegroSettings from './pages/AllegroSettings';
 
 const theme = createTheme({
     palette: {
@@ -113,6 +115,7 @@ function App() {
     const menuItems = [
         { id: 'dashboard', label: 'Dashboard', icon: <DashboardOutlined /> },
         { id: 'tenants', label: 'Tenants', icon: <BusinessOutlined /> },
+        { id: 'allegro', label: 'Allegro Integration', icon: <IntegrationInstructions /> },
         { id: 'monitoring', label: 'Monitoring', icon: <MonitorHeartOutlined /> },
     ];
 
@@ -148,6 +151,8 @@ function App() {
                 return <AdminDashboard />;
             case 'tenants':
                 return <TenantManagement />;
+            case 'allegro':
+                return <AllegroSettings />;
             case 'monitoring':
                 return <SystemMonitoring />;
             default:

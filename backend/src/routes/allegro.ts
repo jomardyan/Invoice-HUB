@@ -170,4 +170,44 @@ router.post('/webhook', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * GET /allegro/settings/:integrationId
+ * Get integration settings
+ */
+router.get('/settings/:integrationId', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { integrationId } = req.params;
+
+    const settings = await allegroService.getSettingsWithDefaults(integrationId);
+
+    res.json({ settings });
+  } catch (error) {
+    logger.error(`[Allegro Routes] Settings retrieval failed: ${error}`);
+    res.status(500).json({ error: 'Failed to retrieve settings' });
+  }
+});
+
+/**
+ * PUT /allegro/settings/:integrationId
+ * Update integration settings
+ */
+router.put('/settings/:integrationId', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { integrationId } = req.params;
+    const { settings } = req.body;
+
+    if (!settings) {
+      res.status(400).json({ error: 'Missing settings in request body' });
+      return;
+    }
+
+    const updatedSettings = await allegroService.updateSettings(integrationId, settings);
+
+    res.json({ success: true, settings: updatedSettings });
+  } catch (error) {
+    logger.error(`[Allegro Routes] Settings update failed: ${error}`);
+    res.status(500).json({ error: 'Failed to update settings' });
+  }
+});
+
 export default router;

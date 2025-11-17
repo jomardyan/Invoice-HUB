@@ -9,6 +9,7 @@ Save 20+ hours per week by automating invoice creation, multi-channel delivery, 
 ### Core Capabilities
 - ✅ **Multi-tenant SaaS Architecture** - Isolated data, white-label branding
 - ✅ **Intelligent Allegro Integration** - Automatic order sync and invoice generation
+- ✅ **BaseLinker Integration** - Sync orders from BaseLinker marketplace
 - ✅ **Smart Invoice Management** - Complete lifecycle with state machine
 - ✅ **Multi-Channel Delivery** - Email, SMS, in-app notifications
 - ✅ **Powerful Export Engine** - PDF, Excel, XML (JPK_FA), JSON, EDI
@@ -191,6 +192,8 @@ npm run dev
 - **OpenAPI Spec**: [backend/docs/openapi.yaml](./backend/docs/openapi.yaml) - Swagger/OpenAPI 3.0 specification
 - **Testing Guide**: [backend/TESTING.md](./backend/TESTING.md) - Automated testing documentation
 - **Swagger UI**: `http://localhost:3000/api-docs` - Interactive API documentation
+- **Allegro Integration**: [ALLEGRO_SETUP_GUIDE.md](./ALLEGRO_SETUP_GUIDE.md) - Allegro marketplace integration guide
+- **BaseLinker Integration**: [BASELINKER_SETUP_GUIDE.md](./BASELINKER_SETUP_GUIDE.md) - BaseLinker integration guide
 
 ## 🧪 Testing
 
@@ -227,6 +230,7 @@ npm run test:all            # All tests (unit + API)
 - ✅ Webhooks (8/8 endpoints)
 - ✅ Scheduler (4/4 endpoints)
 - ✅ Allegro (6/6 endpoints)
+- ✅ BaseLinker (6/6 endpoints)
 
 Target: **80%+ code coverage**
 
@@ -294,6 +298,7 @@ Target: **80%+ code coverage**
 **Phase 5: Integration & Events** ✅ COMPLETE
 - [x] Webhook system (subscriptions, delivery, retry logic)
 - [x] Allegro integration structure (OAuth, webhook receiver)
+- [x] BaseLinker integration (API token auth, order sync)
 - [x] API documentation (OpenAPI 3.0, 80+ endpoints)
 - [x] Comprehensive testing suite (automated API tests)
 
@@ -306,6 +311,7 @@ Target: **80%+ code coverage**
 ### 🔄 In Progress
 - [ ] Payment gateway integration (Stripe, PayPal, Przelewy24 - structure ready)
 - [ ] Allegro full implementation (OAuth flow completion, order sync)
+- [ ] BaseLinker webhook integration (order status updates)
 
 ### 📋 Planned (Remaining 6 Tasks)
 - [ ] Unit test coverage expansion (target 80%+)
@@ -316,11 +322,11 @@ Target: **80%+ code coverage**
 - [ ] End-user documentation (guides, tutorials)
 
 ### 📊 Current Statistics
-- **Total Endpoints:** 80+
-- **Database Tables:** 11
-- **Services:** 18
-- **Routes:** 13
-- **Test Coverage:** Health, Auth, Companies, Customers, Products, Invoices, Payments, Templates, Notifications, Reports, Webhooks, Scheduler, Allegro
+- **Total Endpoints:** 86+
+- **Database Tables:** 12
+- **Services:** 19
+- **Routes:** 14
+- **Test Coverage:** Health, Auth, Companies, Customers, Products, Invoices, Payments, Templates, Notifications, Reports, Webhooks, Scheduler, Allegro, BaseLinker
 - **API Documentation:** Complete (OpenAPI 3.0)
 
 See [DEVELOPMENT_PLAN.md](./DEVELOPMENT_PLAN.md) for detailed implementation roadmap.

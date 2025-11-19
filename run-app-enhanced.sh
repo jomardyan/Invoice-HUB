@@ -28,11 +28,11 @@ readonly NC='\033[0m'
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly BACKEND_DIR="$SCRIPT_DIR/backend"
 readonly ADMIN_DIR="$SCRIPT_DIR/frontend-admin"
-readonly USER_DIR="$SCRIPT_DIR/frontend-user
+readonly USER_DIR="$SCRIPT_DIR/frontend-user"
 readonly LOG_DIR="$SCRIPT_DIR/.run-logs"
 
 # Default Ports (can be overridden by environment variables)
-export BACKEND_PORT="${BACKEND_PORT:-3000}"f
+export BACKEND_PORT="${BACKEND_PORT:-3000}"
 export ADMIN_PORT="${ADMIN_PORT:-5174}"
 export USER_PORT="${USER_PORT:-5173}"
 export POSTGRES_PORT="${POSTGRES_PORT:-5432}"
@@ -1114,5 +1114,5 @@ case "${1:-}" in
         echo ""
         echo "Run '$0 help' for usage information"
         exit 1
-        ;;
+        
 esac

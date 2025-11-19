@@ -95,7 +95,7 @@ export const errorHandler = (
     const validationError = ValidationError.fromZodError(err, traceId);
 
     logger.warn(`[${traceId}] Validation failed`, {
-      errors: err.errors,
+      errors: err.issues,
       method: req.method,
       url: req.originalUrl,
       body: sanitizeErrorDetails(req.body),

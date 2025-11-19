@@ -12,6 +12,7 @@ export class AuthController {
                 message: 'Validation failed',
                 error: errors.array(),
             });
+            return;
         }
 
         const { email } = req.body;
@@ -23,6 +24,7 @@ export class AuthController {
                 statusCode: 404,
                 message: 'User not found',
             });
+            return;
         }
 
         res.status(200).json({
@@ -43,6 +45,7 @@ export class AuthController {
                 message: 'Validation failed',
                 error: errors.array(),
             });
+            return;
         }
 
         const result = await authService.register(req.body);
@@ -64,6 +67,7 @@ export class AuthController {
                 message: 'Validation failed',
                 error: errors.array(),
             });
+            return;
         }
 
         let loginInput = req.body;
@@ -75,6 +79,7 @@ export class AuthController {
                     statusCode: 404,
                     message: 'User not found',
                 });
+                return;
             }
             loginInput = {
                 ...loginInput,

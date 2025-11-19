@@ -42,8 +42,8 @@ export class PaymentsController {
         const { status, provider, limit, offset } = req.query;
 
         const result = await PaymentService.getPayments(tenantId, {
-            status: status as string,
-            provider: provider as string,
+            status: status as any,
+            provider: provider as any,
             limit: limit ? parseInt(limit as string) : undefined,
             offset: offset ? parseInt(offset as string) : undefined,
         });
@@ -79,6 +79,7 @@ export class PaymentsController {
     static async handleStripeWebhook(req: Request, res: Response): Promise<void> {
         if (!stripe) {
             res.status(400).json({ error: 'Stripe not configured' });
+            return;
         }
 
         const sig = req.headers['stripe-signature'];
@@ -87,6 +88,12 @@ export class PaymentsController {
         if (!webhookSecret) {
             logger.error('Stripe webhook secret not configured');
             res.status(400).json({ error: 'Webhook not configured' });
+            return;
+        }
+
+        if (!sig) {
+            res.status(400).json({ error: 'Missing stripe signature' });
+            return;
         }
 
         let event: Stripe.Event;
@@ -96,6 +103,7 @@ export class PaymentsController {
         } catch (err: any) {
             logger.error('Stripe webhook signature verification failed', { error: err.message });
             res.status(400).json({ error: 'Webhook signature verification failed' });
+            return;
         }
 
         await PaymentService.handleStripeWebhook(event);

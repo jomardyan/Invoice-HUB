@@ -384,4 +384,69 @@ export class KSeFService {
       errors: submissions.filter((s) => s.status === KSeFStatus.ERROR).length,
     };
   }
+
+  async listActiveSessions(tenantId: string, options: any): Promise<any> {
+    console.log(tenantId, options);
+    return { sessions: [], total: 0 };
+  }
+
+  async terminateCurrentSession(tenantId: string): Promise<void> {
+    console.log(tenantId);
+    // Stub
+  }
+
+  async terminateSession(tenantId: string, referenceNumber: string): Promise<void> {
+    console.log(tenantId, referenceNumber);
+    // Stub
+  }
+
+  async sendInteractiveInvoice(tenantId: string, invoice: any): Promise<any> {
+    console.log(tenantId, invoice);
+    return { referenceNumber: 'stub', status: 'stub' };
+  }
+
+  async getSessionStatus(tenantId: string, referenceNumber: string): Promise<any> {
+    console.log(tenantId, referenceNumber);
+    return { status: 'stub' };
+  }
+
+  async getSessionUPO(tenantId: string, referenceNumber: string): Promise<any> {
+    console.log(tenantId, referenceNumber);
+    return { upo: 'stub' };
+  }
+
+  async openBatchSession(tenantId: string, options: any): Promise<any> {
+    console.log(tenantId, options);
+    return { referenceNumber: 'stub' };
+  }
+
+  async closeBatchSession(tenantId: string, referenceNumber: string): Promise<any> {
+    console.log(tenantId, referenceNumber);
+    return { status: 'closed' };
+  }
+
+  async uploadBatchInvoice(tenantId: string, referenceNumber: string, invoiceData: any): Promise<any> {
+    console.log(tenantId, referenceNumber, invoiceData);
+    return { status: 'uploaded' };
+  }
+
+  async queryInvoiceMetadata(tenantId: string, criteria: any, pagination: any): Promise<any> {
+    console.log(tenantId, criteria, pagination);
+    return { invoices: [], total: 0 };
+  }
+
+  async getInvoiceByKsefNumber(tenantId: string, ksefNumber: string): Promise<any> {
+    console.log(tenantId, ksefNumber);
+    return { invoice: {} };
+  }
+
+  async createInvoiceExport(tenantId: string, criteria: any, encryptionKey: any): Promise<any> {
+    console.log(tenantId, criteria, encryptionKey);
+    return { exportId: 'stub' };
+  }
+
+  async getExportStatus(tenantId: string, exportId: string): Promise<any> {
+    console.log(tenantId, exportId);
+    return { status: 'stub' };
+  }
 }

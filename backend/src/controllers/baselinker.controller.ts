@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import BaseLinkerService from '../services/BaseLinkerService';
-import logger from '../utils/logger';
 
 const baselinkerService = new BaseLinkerService();
 
@@ -10,6 +9,7 @@ export class BaseLinkerController {
 
         if (!tenantId || !userId || !apiToken) {
             res.status(400).json({ error: 'Missing required parameters: tenantId, userId, apiToken' });
+            return;
         }
 
         const integration = await baselinkerService.createIntegration(tenantId, userId, apiToken);
@@ -30,6 +30,7 @@ export class BaseLinkerController {
 
         if (!status) {
             res.status(404).json({ error: 'Integration not found' });
+            return;
         }
 
         res.json({
@@ -46,6 +47,7 @@ export class BaseLinkerController {
 
         if (!integrationId || !companyId || !tenantId) {
             res.status(400).json({ error: 'Missing required parameters: integrationId, companyId, tenantId' });
+            return;
         }
 
         const result = await baselinkerService.syncOrdersWithRetry(integrationId, companyId, tenantId);
@@ -66,6 +68,7 @@ export class BaseLinkerController {
 
         if (!integration) {
             res.status(404).json({ error: 'Integration not found' });
+            return;
         }
 
         const settings = baselinkerService.getSettingsWithDefaults(integration.settings || {});
@@ -77,6 +80,7 @@ export class BaseLinkerController {
 
         if (!tenantId) {
             res.status(400).json({ error: 'Missing tenantId parameter' });
+            return;
         }
 
         const integrations = await baselinkerService.getIntegrationsByTenant(tenantId);
@@ -98,6 +102,7 @@ export class BaseLinkerController {
 
         if (!settings) {
             res.status(400).json({ error: 'Missing settings in request body' });
+            return;
         }
 
         const updatedSettings = await baselinkerService.updateSettings(integrationId, settings);

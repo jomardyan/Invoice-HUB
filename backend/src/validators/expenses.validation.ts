@@ -1,5 +1,5 @@
 import { body, param } from 'express-validator';
-import { ExpenseCategory, ExpenseStatus } from '@/entities/Expense';
+import { ExpenseCategory } from '@/entities/Expense';
 
 export const createExpenseValidation = [
     param('tenantId').isUUID().withMessage('Invalid tenant ID'),

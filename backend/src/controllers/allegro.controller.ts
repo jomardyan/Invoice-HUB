@@ -10,6 +10,7 @@ export class AllegroController {
 
         if (!tenantId) {
             res.status(400).json({ error: 'Missing tenantId parameter' });
+            return;
         }
 
         const authUrl = allegroService.getAuthorizationUrl(tenantId as string);
@@ -21,6 +22,7 @@ export class AllegroController {
 
         if (!tenantId || !userId || !code) {
             res.status(400).json({ error: 'Missing required parameters: tenantId, userId, code' });
+            return;
         }
 
         const integration = await allegroService.exchangeCodeForTokens(tenantId, userId, code as string);
@@ -42,6 +44,7 @@ export class AllegroController {
 
         if (!status) {
             res.status(404).json({ error: 'Integration not found' });
+            return;
         }
 
         res.json({
@@ -59,6 +62,7 @@ export class AllegroController {
 
         if (!integrationId || !companyId || !tenantId) {
             res.status(400).json({ error: 'Missing required parameters: integrationId, companyId, tenantId' });
+            return;
         }
 
         const result = await allegroService.syncOrdersWithRetry(integrationId, companyId, tenantId);
@@ -104,6 +108,7 @@ export class AllegroController {
 
         if (!tenantId) {
             res.status(400).json({ error: 'Missing tenantId parameter' });
+            return;
         }
 
         const integrations = await allegroService.getIntegrationsByTenant(tenantId);
@@ -126,6 +131,7 @@ export class AllegroController {
 
         if (!settings) {
             res.status(400).json({ error: 'Missing settings in request body' });
+            return;
         }
 
         const updatedSettings = await allegroService.updateSettings(integrationId, settings);

@@ -216,6 +216,7 @@ export class InvoicesController {
                 status: 'error',
                 message: 'Invoice not found',
             });
+            return;
         }
 
         const result = await ExportService.exportInvoice(invoice, format as ExportFormat);
@@ -225,6 +226,7 @@ export class InvoicesController {
                 status: 'error',
                 message: result.error || 'Export failed',
             });
+            return;
         }
 
         res.setHeader('Content-Type', result.mimeType);
@@ -250,6 +252,7 @@ export class InvoicesController {
                 status: 'error',
                 message: 'No invoices found',
             });
+            return;
         }
 
         const result = await ExportService.exportInvoices(invoices, format as ExportFormat);
@@ -259,6 +262,7 @@ export class InvoicesController {
                 status: 'error',
                 message: result.error || 'Export failed',
             });
+            return;
         }
 
         res.setHeader('Content-Type', result.mimeType);

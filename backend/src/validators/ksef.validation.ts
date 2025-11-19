@@ -1,5 +1,5 @@
 import { body, param, query } from 'express-validator';
-import { KSeFStatus } from '@/entities/KSeFIntegration';
+// import { KSeFStatus } from '@/entities/KSeFIntegration';
 
 // Configuration validators
 export const createConfigValidation = [

@@ -2,15 +2,14 @@ import { Request, Response } from 'express';
 import { validationResult } from 'express-validator';
 import { InvoiceService, InvoiceCreateInput, InvoiceUpdateInput } from '../services/InvoiceService';
 import ExportService, { ExportFormat } from '../services/ExportService';
-import logger from '../utils/logger';
 
 const invoiceService = new InvoiceService();
 
 export class InvoicesController {
-    static async createInvoice(req: Request, res: Response) {
+    static async createInvoice(req: Request, res: Response): Promise<void> {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            return res.status(400).json({ status: 'error', errors: errors.array() });
+            res.status(400).json({ status: 'error', errors: errors.array() });
         }
 
         const { tenantId } = req.params;
@@ -27,7 +26,7 @@ export class InvoicesController {
         });
     }
 
-    static async listInvoices(req: Request, res: Response) {
+    static async listInvoices(req: Request, res: Response): Promise<void> {
         const { tenantId } = req.params;
         const { page = 1, limit = 50, status, companyId, customerId, startDate, endDate } = req.query;
 
@@ -52,17 +51,17 @@ export class InvoicesController {
         });
     }
 
-    static async getInvoice(req: Request, res: Response) {
+    static async getInvoice(req: Request, res: Response): Promise<void> {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            return res.status(400).json({ status: 'error', errors: errors.array() });
+            res.status(400).json({ status: 'error', errors: errors.array() });
         }
 
         const { tenantId, invoiceId } = req.params;
 
         const invoice = await invoiceService.getInvoiceById(tenantId, invoiceId);
         if (!invoice) {
-            return res.status(404).json({
+            res.status(404).json({
                 status: 'error',
                 message: 'Invoice not found',
             });
@@ -74,10 +73,10 @@ export class InvoicesController {
         });
     }
 
-    static async updateInvoice(req: Request, res: Response) {
+    static async updateInvoice(req: Request, res: Response): Promise<void> {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            return res.status(400).json({ status: 'error', errors: errors.array() });
+            res.status(400).json({ status: 'error', errors: errors.array() });
         }
 
         const { tenantId, invoiceId } = req.params;
@@ -91,7 +90,7 @@ export class InvoicesController {
         });
     }
 
-    static async markAsPending(req: Request, res: Response) {
+    static async markAsPending(req: Request, res: Response): Promise<void> {
         const { tenantId, invoiceId } = req.params;
 
         const invoice = await invoiceService.markAsPending(tenantId, invoiceId);
@@ -102,7 +101,7 @@ export class InvoicesController {
         });
     }
 
-    static async approveInvoice(req: Request, res: Response) {
+    static async approveInvoice(req: Request, res: Response): Promise<void> {
         const { tenantId, invoiceId } = req.params;
 
         const invoice = await invoiceService.approveInvoice(tenantId, invoiceId);
@@ -113,7 +112,7 @@ export class InvoicesController {
         });
     }
 
-    static async markAsSent(req: Request, res: Response) {
+    static async markAsSent(req: Request, res: Response): Promise<void> {
         const { tenantId, invoiceId } = req.params;
         const { sentDate } = req.body;
 
@@ -125,7 +124,7 @@ export class InvoicesController {
         });
     }
 
-    static async markAsViewed(req: Request, res: Response) {
+    static async markAsViewed(req: Request, res: Response): Promise<void> {
         const { tenantId, invoiceId } = req.params;
         const { viewedDate } = req.body;
 
@@ -137,10 +136,10 @@ export class InvoicesController {
         });
     }
 
-    static async recordPayment(req: Request, res: Response) {
+    static async recordPayment(req: Request, res: Response): Promise<void> {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            return res.status(400).json({ status: 'error', errors: errors.array() });
+            res.status(400).json({ status: 'error', errors: errors.array() });
         }
 
         const { tenantId, invoiceId } = req.params;
@@ -154,7 +153,7 @@ export class InvoicesController {
         });
     }
 
-    static async cancelInvoice(req: Request, res: Response) {
+    static async cancelInvoice(req: Request, res: Response): Promise<void> {
         const { tenantId, invoiceId } = req.params;
         const { reason } = req.body;
 
@@ -166,7 +165,7 @@ export class InvoicesController {
         });
     }
 
-    static async getInvoiceStats(req: Request, res: Response) {
+    static async getInvoiceStats(req: Request, res: Response): Promise<void> {
         const { tenantId, companyId } = req.params;
         const { startDate, endDate } = req.query;
 
@@ -183,7 +182,7 @@ export class InvoicesController {
         });
     }
 
-    static async sendPaymentReminder(req: Request, res: Response) {
+    static async sendPaymentReminder(req: Request, res: Response): Promise<void> {
         const { tenantId, invoiceId } = req.params;
 
         await invoiceService.sendPaymentReminder(tenantId, invoiceId);
@@ -194,7 +193,7 @@ export class InvoicesController {
         });
     }
 
-    static async sendOverdueReminders(req: Request, res: Response) {
+    static async sendOverdueReminders(req: Request, res: Response): Promise<void> {
         const { tenantId } = req.params;
         const { companyId } = req.query;
 
@@ -207,13 +206,13 @@ export class InvoicesController {
         });
     }
 
-    static async exportInvoice(req: Request, res: Response) {
+    static async exportInvoice(req: Request, res: Response): Promise<void> {
         const { tenantId, invoiceId } = req.params;
         const { format } = req.query;
 
         const invoice = await invoiceService.getInvoiceById(tenantId, invoiceId);
         if (!invoice) {
-            return res.status(404).json({
+            res.status(404).json({
                 status: 'error',
                 message: 'Invoice not found',
             });
@@ -222,18 +221,18 @@ export class InvoicesController {
         const result = await ExportService.exportInvoice(invoice, format as ExportFormat);
 
         if (!result.success) {
-            return res.status(500).json({
+            res.status(500).json({
                 status: 'error',
                 message: result.error || 'Export failed',
             });
         }
 
         res.setHeader('Content-Type', result.mimeType);
-        res.setHeader('Content-Disposition', `attachment; filename="${result.filename}"`);
+        res.setHeader('Content-Disposition', `attachment; filename = "${result.filename}"`);
         res.send(result.buffer);
     }
 
-    static async exportInvoices(req: Request, res: Response) {
+    static async exportInvoices(req: Request, res: Response): Promise<void> {
         const { tenantId } = req.params;
         const { format } = req.query;
         const { invoiceIds } = req.body;
@@ -247,7 +246,7 @@ export class InvoicesController {
         }
 
         if (invoices.length === 0) {
-            return res.status(404).json({
+            res.status(404).json({
                 status: 'error',
                 message: 'No invoices found',
             });
@@ -256,14 +255,14 @@ export class InvoicesController {
         const result = await ExportService.exportInvoices(invoices, format as ExportFormat);
 
         if (!result.success) {
-            return res.status(500).json({
+            res.status(500).json({
                 status: 'error',
                 message: result.error || 'Export failed',
             });
         }
 
         res.setHeader('Content-Type', result.mimeType);
-        res.setHeader('Content-Disposition', `attachment; filename="${result.filename}"`);
+        res.setHeader('Content-Disposition', `attachment; filename = "${result.filename}"`);
         res.send(result.buffer);
     }
 }

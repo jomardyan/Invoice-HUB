@@ -1,2 +1,289 @@
 // @ts-nocheck
-import { RegisterInput } from '@/services/AuthService'; import { UserRole } from '@/entities/User';  jest.mock('uuid', () => ({   v4: jest.fn(() => 'mocked-uuid-v4'), }));  jest.mock('@/utils/password', () => ({   hashPassword: jest.fn().mockResolvedValue('hashed-password'),   verifyPassword: jest.fn().mockResolvedValue(true),   generateRandomToken: jest.fn(() => 'random-token-123'), }));  jest.mock('@/utils/jwt', () => ({   generateAccessToken: jest.fn(() => 'access-token-jwt'),   generateRefreshToken: jest.fn(() => 'refresh-token-jwt'),   verifyAccessToken: jest.fn(() => ({ userId: 'user-123', email: 'test@example.com' })), }));  describe('AuthService', () => {   beforeEach(() => {     // Setup for tests   });    describe('register', () => {     it('should register a new user successfully', async () => {       const input: RegisterInput = {         email: 'newuser@example.com',         password: 'SecurePass123!@#',         firstName: 'John',         lastName: 'Doe',         tenantName: 'Test Company',       };        // Validation       expect(input.email).toContain('@');       expect(input.password.length).toBeGreaterThanOrEqual(12);       expect(/[A-Z]/.test(input.password)).toBe(true);       expect(/[a-z]/.test(input.password)).toBe(true);       expect(/[0-9]/.test(input.password)).toBe(true);       expect(/[!@#$%^&*]/.test(input.password)).toBe(true);     });      it('should validate password requirements', () => {       const validPasswords = [         'SecurePass123!@#',         'MyPassword456$%^',         'Test9876*()_+',       ];        const invalidPasswords = [         'short1!', // Too short         'nouppercase123!', // No uppercase         'NOLOWERCASE123!', // No lowercase         'NoNumbers!@#$', // No numbers         'NoSpecialChars123', // No special chars       ];        validPasswords.forEach(pwd => {         expect(pwd.length).toBeGreaterThanOrEqual(12);         expect(/[A-Z]/.test(pwd)).toBe(true);         expect(/[a-z]/.test(pwd)).toBe(true);         expect(/[0-9]/.test(pwd)).toBe(true);         expect(/[!@#$%^&*]/.test(pwd)).toBe(true);       });        invalidPasswords.forEach(pwd => {         const hasUpper = /[A-Z]/.test(pwd);         const hasLower = /[a-z]/.test(pwd);         const hasNum = /[0-9]/.test(pwd);         const hasSpecial = /[!@#$%^&*]/.test(pwd);         const isLongEnough = pwd.length >= 12;          const isValid = hasUpper && hasLower && hasNum && hasSpecial && isLongEnough;         expect(isValid).toBe(false);       });     });      it('should create tenant with FREE tier on registration', () => {       const tier = 'free';       const status = 'trial';       expect(tier).toBe('free');       expect(status).toBe('trial');     });      it('should create first user as ADMIN', () => {       expect(UserRole.ADMIN).toBe('admin');     });      it('should generate access and refresh tokens', () => {       const payload = {         userId: 'user-123',         email: 'user@example.com',         tenantId: 'tenant-123',         roles: [UserRole.ADMIN],       };        expect(payload).toHaveProperty('userId');       expect(payload).toHaveProperty('email');       expect(payload).toHaveProperty('tenantId');       expect(payload).toHaveProperty('roles');       expect(payload.roles[0]).toBe(UserRole.ADMIN);     });   });    describe('login', () => {     it('should validate email format', () => {       const validEmails = [         'user@example.com',         'test.user@domain.co.uk',         'admin+tag@company.com',       ];        const invalidEmails = [         'invalid.email',         '@nodomain.com',         'user@',       ];        validEmails.forEach(email => {         const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);         expect(isValid).toBe(true);       });        invalidEmails.forEach(email => {         const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);         expect(isValid).toBe(false);       });     });      it('should require valid tenantId', () => {       const validUUID = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';       const invalidUUID = 'not-a-uuid';        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;              expect(uuidRegex.test(validUUID)).toBe(true);       expect(uuidRegex.test(invalidUUID)).toBe(false);     });      it('should return auth response with tokens', () => {       const response = {         accessToken: 'access-token-jwt',         refreshToken: 'refresh-token-jwt',         user: {           id: 'user-123',           email: 'user@example.com',           firstName: 'John',           lastName: 'Doe',           role: UserRole.ADMIN,           tenantId: 'tenant-123',         },       };        expect(response).toHaveProperty('accessToken');       expect(response).toHaveProperty('refreshToken');       expect(response.user).toHaveProperty('id');       expect(response.user).toHaveProperty('email');       expect(response.user.role).toBe(UserRole.ADMIN);     });   });    describe('token management', () => {     it('should create JWT payload with required fields', () => {       const payload = {         userId: 'user-123',         email: 'user@example.com',         tenantId: 'tenant-123',         roles: [UserRole.MANAGER],       };        expect(payload.userId).toBeDefined();       expect(payload.email).toBeDefined();       expect(payload.tenantId).toBeDefined();       expect(payload.roles).toBeDefined();       expect(Array.isArray(payload.roles)).toBe(true);     });      it('should support multiple user roles', () => {       const roles = [         UserRole.ADMIN,         UserRole.MANAGER,         UserRole.ACCOUNTANT,         UserRole.USER,       ];        expect(roles).toHaveLength(4);       roles.forEach(role => {         expect(typeof role).toBe('string');       });     });      it('should generate refresh token with longer expiry', () => {       const accessTokenExpiry = 15 * 60; // 15 minutes       const refreshTokenExpiry = 30 * 24 * 60 * 60; // 30 days        expect(refreshTokenExpiry).toBeGreaterThan(accessTokenExpiry);     });   });    describe('email verification', () => {     it('should generate verification token for new user', () => {       const token = 'random-token-123';       expect(token).toBeDefined();       expect(typeof token).toBe('string');     });      it('should mark user as unverified on registration', () => {       const user = {         emailVerified: false,         emailVerificationToken: 'token-123',       };        expect(user.emailVerified).toBe(false);       expect(user.emailVerificationToken).toBeDefined();     });   });    describe('password security', () => {     it('should hash password before storage', () => {       const plainPassword = 'MySecurePass123!';       const hashedPassword = 'hashed-password';        expect(plainPassword).not.toBe(hashedPassword);     });      it('should validate password strength on update', () => {       const weakPasswords = ['123456', 'password', 'qwerty'];       const strongPassword = 'NewSecurePass456!@#';        weakPasswords.forEach(pwd => {         const isStrong = pwd.length >= 12 &&                           /[A-Z]/.test(pwd) &&                           /[a-z]/.test(pwd) &&                           /[0-9]/.test(pwd) &&                          /[!@#$%^&*]/.test(pwd);         expect(isStrong).toBe(false);       });        const isStrong = strongPassword.length >= 12 &&                         /[A-Z]/.test(strongPassword) &&                         /[a-z]/.test(strongPassword) &&                         /[0-9]/.test(strongPassword) &&                        /[!@#$%^&*]/.test(strongPassword);       expect(isStrong).toBe(true);     });   });    describe('account lockout', () => {     it('should lock account after 5 failed login attempts', () => {       let failedAttempts = 0;       const maxAttempts = 5;        for (let i = 0; i < 6; i++) {         if (i < maxAttempts) {           failedAttempts++;         }       }        expect(failedAttempts).toBe(maxAttempts);       expect(failedAttempts >= maxAttempts).toBe(true);     });      it('should unlock account after lockout period (15 minutes)', () => {       const lockedAt = new Date();       const lockoutDuration = 15 * 60 * 1000; // 15 minutes in ms       const unlockedAt = new Date(lockedAt.getTime() + lockoutDuration);        expect(unlockedAt.getTime()).toBeGreaterThan(lockedAt.getTime());     });   });    describe('role-based access', () => {     it('should enforce role-based permissions', () => {       const permissions = {         [UserRole.ADMIN]: ['*'], // All permissions         [UserRole.MANAGER]: ['approve_invoices', 'manage_team', 'manage_users'],         [UserRole.ACCOUNTANT]: ['create_invoices', 'export_data', 'view_reports'],         [UserRole.USER]: ['create_invoices', 'view_reports'],       };        expect(permissions[UserRole.ADMIN]).toContain('*');       expect(permissions[UserRole.MANAGER]).toContain('manage_users');       expect(permissions[UserRole.ACCOUNTANT]).toContain('create_invoices');       expect(permissions[UserRole.USER]).toContain('view_reports');     });   }); });
+import { RegisterInput } from '@/services/AuthService';
+import { UserRole } from '@/entities/User';
+
+jest.mock('uuid', () => ({
+    v4: jest.fn(() => 'mocked-uuid-v4'),
+}));
+
+jest.mock('@/utils/password', () => ({
+    hashPassword: jest.fn().mockResolvedValue('hashed-password'),
+    verifyPassword: jest.fn().mockResolvedValue(true),
+    generateRandomToken: jest.fn(() => 'random-token-123'),
+}));
+
+jest.mock('@/utils/jwt', () => ({
+    generateAccessToken: jest.fn(() => 'access-token-jwt'),
+    generateRefreshToken: jest.fn(() => 'refresh-token-jwt'),
+    verifyAccessToken: jest.fn(() => ({ userId: 'user-123', email: 'test@example.com' })),
+}));
+
+describe('AuthService', () => {
+    beforeEach(() => {
+        // Setup for tests
+    });
+
+    describe('register', () => {
+        it('should register a new user successfully', async () => {
+            const input: RegisterInput = {
+                email: 'newuser@example.com',
+                password: 'SecurePass123!@#',
+                firstName: 'John',
+                lastName: 'Doe',
+                tenantName: 'Test Company',
+            };
+
+            // Validation
+            expect(input.email).toContain('@');
+            expect(input.password.length).toBeGreaterThanOrEqual(12);
+            expect(/[A-Z]/.test(input.password)).toBe(true);
+            expect(/[a-z]/.test(input.password)).toBe(true);
+            expect(/[0-9]/.test(input.password)).toBe(true);
+            expect(/[!@#$%^&*]/.test(input.password)).toBe(true);
+        });
+
+        it('should validate password requirements', () => {
+            const validPasswords = [
+                'SecurePass123!@#',
+                'MyPassword456$%^',
+                'Test9876*()_+',
+            ];
+
+            const invalidPasswords = [
+                'short1!', // Too short
+                'nouppercase123!', // No uppercase
+                'NOLOWERCASE123!', // No lowercase
+                'NoNumbers!@#$', // No numbers
+                'NoSpecialChars123', // No special chars
+            ];
+
+            validPasswords.forEach(pwd => {
+                expect(pwd.length).toBeGreaterThanOrEqual(12);
+                expect(/[A-Z]/.test(pwd)).toBe(true);
+                expect(/[a-z]/.test(pwd)).toBe(true);
+                expect(/[0-9]/.test(pwd)).toBe(true);
+                expect(/[!@#$%^&*]/.test(pwd)).toBe(true);
+            });
+
+            invalidPasswords.forEach(pwd => {
+                const hasUpper = /[A-Z]/.test(pwd);
+                const hasLower = /[a-z]/.test(pwd);
+                const hasNum = /[0-9]/.test(pwd);
+                const hasSpecial = /[!@#$%^&*]/.test(pwd);
+                const isLongEnough = pwd.length >= 12;
+
+                const isValid = hasUpper && hasLower && hasNum && hasSpecial && isLongEnough;
+                expect(isValid).toBe(false);
+            });
+        });
+
+        it('should create tenant with FREE tier on registration', () => {
+            const tier = 'free';
+            const status = 'trial';
+            expect(tier).toBe('free');
+            expect(status).toBe('trial');
+        });
+
+        it('should create first user as ADMIN', () => {
+            expect(UserRole.ADMIN).toBe('admin');
+        });
+
+        it('should generate access and refresh tokens', () => {
+            const payload = {
+                userId: 'user-123',
+                email: 'user@example.com',
+                tenantId: 'tenant-123',
+                roles: [UserRole.ADMIN],
+            };
+
+            expect(payload).toHaveProperty('userId');
+            expect(payload).toHaveProperty('email');
+            expect(payload).toHaveProperty('tenantId');
+            expect(payload).toHaveProperty('roles');
+            expect(payload.roles[0]).toBe(UserRole.ADMIN);
+        });
+    });
+
+    describe('login', () => {
+        it('should validate email format', () => {
+            const validEmails = [
+                'user@example.com',
+                'test.user@domain.co.uk',
+                'admin+tag@company.com',
+            ];
+
+            const invalidEmails = [
+                'invalid.email',
+                '@nodomain.com',
+                'user@',
+            ];
+
+            validEmails.forEach(email => {
+                const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+                expect(isValid).toBe(true);
+            });
+
+            invalidEmails.forEach(email => {
+                const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+                expect(isValid).toBe(false);
+            });
+        });
+
+        it('should require valid tenantId', () => {
+            const validUUID = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
+            const invalidUUID = 'not-a-uuid';
+
+            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+            expect(uuidRegex.test(validUUID)).toBe(true);
+            expect(uuidRegex.test(invalidUUID)).toBe(false);
+        });
+
+        it('should return auth response with tokens', () => {
+            const response = {
+                accessToken: 'access-token-jwt',
+                refreshToken: 'refresh-token-jwt',
+                user: {
+                    id: 'user-123',
+                    email: 'user@example.com',
+                    firstName: 'John',
+                    lastName: 'Doe',
+                    role: UserRole.ADMIN,
+                    tenantId: 'tenant-123',
+                },
+            };
+
+            expect(response).toHaveProperty('accessToken');
+            expect(response).toHaveProperty('refreshToken');
+            expect(response.user).toHaveProperty('id');
+            expect(response.user).toHaveProperty('email');
+            expect(response.user.role).toBe(UserRole.ADMIN);
+        });
+    });
+
+    describe('token management', () => {
+        it('should create JWT payload with required fields', () => {
+            const payload = {
+                userId: 'user-123',
+                email: 'user@example.com',
+                tenantId: 'tenant-123',
+                roles: [UserRole.MANAGER],
+            };
+
+            expect(payload.userId).toBeDefined();
+            expect(payload.email).toBeDefined();
+            expect(payload.tenantId).toBeDefined();
+            expect(payload.roles).toBeDefined();
+            expect(Array.isArray(payload.roles)).toBe(true);
+        });
+
+        it('should support multiple user roles', () => {
+            const roles = [
+                UserRole.ADMIN,
+                UserRole.MANAGER,
+                UserRole.ACCOUNTANT,
+                UserRole.USER,
+            ];
+
+            expect(roles).toHaveLength(4);
+            roles.forEach(role => {
+                expect(typeof role).toBe('string');
+            });
+        });
+
+        it('should generate refresh token with longer expiry', () => {
+            const accessTokenExpiry = 15 * 60; // 15 minutes
+            const refreshTokenExpiry = 30 * 24 * 60 * 60; // 30 days
+
+            expect(refreshTokenExpiry).toBeGreaterThan(accessTokenExpiry);
+        });
+    });
+
+    describe('email verification', () => {
+        it('should generate verification token for new user', () => {
+            const token = 'random-token-123';
+            expect(token).toBeDefined();
+            expect(typeof token).toBe('string');
+        });
+
+        it('should mark user as unverified on registration', () => {
+            const user = {
+                emailVerified: false,
+                emailVerificationToken: 'token-123',
+            };
+
+            expect(user.emailVerified).toBe(false);
+            expect(user.emailVerificationToken).toBeDefined();
+        });
+    });
+
+    describe('password security', () => {
+        it('should hash password before storage', () => {
+            const plainPassword = 'MySecurePass123!';
+            const hashedPassword = 'hashed-password';
+
+            expect(plainPassword).not.toBe(hashedPassword);
+        });
+
+        it('should validate password strength on update', () => {
+            const weakPasswords = ['123456', 'password', 'qwerty'];
+            const strongPassword = 'NewSecurePass456!@#';
+
+            weakPasswords.forEach(pwd => {
+                const isStrong = pwd.length >= 12 &&
+                    /[A-Z]/.test(pwd) &&
+                    /[a-z]/.test(pwd) &&
+                    /[0-9]/.test(pwd) &&
+                    /[!@#$%^&*]/.test(pwd);
+                expect(isStrong).toBe(false);
+            });
+
+            const isStrong = strongPassword.length >= 12 &&
+                /[A-Z]/.test(strongPassword) &&
+                /[a-z]/.test(strongPassword) &&
+                /[0-9]/.test(strongPassword) &&
+                /[!@#$%^&*]/.test(strongPassword);
+            expect(isStrong).toBe(true);
+        });
+    });
+
+    describe('account lockout', () => {
+        it('should lock account after 5 failed login attempts', () => {
+            let failedAttempts = 0;
+            const maxAttempts = 5;
+
+            for (let i = 0; i < 6; i++) {
+                if (i < maxAttempts) {
+                    failedAttempts++;
+                }
+            }
+
+            expect(failedAttempts).toBe(maxAttempts);
+            expect(failedAttempts >= maxAttempts).toBe(true);
+        });
+
+        it('should unlock account after lockout period (15 minutes)', () => {
+            const lockedAt = new Date();
+            const lockoutDuration = 15 * 60 * 1000; // 15 minutes in ms
+            const unlockedAt = new Date(lockedAt.getTime() + lockoutDuration);
+
+            expect(unlockedAt.getTime()).toBeGreaterThan(lockedAt.getTime());
+        });
+    });
+
+    describe('role-based access', () => {
+        it('should enforce role-based permissions', () => {
+            const permissions = {
+                [UserRole.ADMIN]: ['*'], // All permissions
+                [UserRole.MANAGER]: ['approve_invoices', 'manage_team', 'manage_users'],
+                [UserRole.ACCOUNTANT]: ['create_invoices', 'export_data', 'view_reports'],
+                [UserRole.USER]: ['create_invoices', 'view_reports'],
+            };
+
+            expect(permissions[UserRole.ADMIN]).toContain('*');
+            expect(permissions[UserRole.MANAGER]).toContain('manage_users');
+            expect(permissions[UserRole.ACCOUNTANT]).toContain('create_invoices');
+            expect(permissions[UserRole.USER]).toContain('view_reports');
+        });
+    });
+});

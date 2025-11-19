@@ -129,6 +129,8 @@ class App {
     });
 
     // API routes
+    // Backwards compatibility: mount admin routes without version prefix
+    this.app.use('/api/admin', adminRoutes);
     this.app.use(`/api/${config.apiVersion}/auth`, authRoutes);
     this.app.use(`/api/${config.apiVersion}/admin`, adminRoutes);
     this.app.use(`/api/${config.apiVersion}`, companiesRoutes);

@@ -24,22 +24,30 @@ readonly CYAN='\033[0;36m'
 readonly WHITE='\033[1;37m'
 readonly NC='\033[0m'
 
-# Server URLs
-readonly BACKEND_URL="http://localhost:3000"
-readonly ADMIN_URL="http://localhost:5174"
-readonly USER_URL="http://localhost:5173"
-readonly API_DOCS_URL="$BACKEND_URL/api-docs"
-
 # Script configuration
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly BACKEND_DIR="$SCRIPT_DIR/backend"
 readonly ADMIN_DIR="$SCRIPT_DIR/frontend-admin"
-readonly USER_DIR="$SCRIPT_DIR/frontend-user"
+readonly USER_DIR="$SCRIPT_DIR/frontend-user
 readonly LOG_DIR="$SCRIPT_DIR/.run-logs"
+
+# Default Ports (can be overridden by environment variables)
+export BACKEND_PORT="${BACKEND_PORT:-3000}"f
+export ADMIN_PORT="${ADMIN_PORT:-5174}"
+export USER_PORT="${USER_PORT:-5173}"
+export POSTGRES_PORT="${POSTGRES_PORT:-5432}"
+export REDIS_PORT="${REDIS_PORT:-6379}"
+
+# Server URLs
+readonly BACKEND_URL="http://localhost:$BACKEND_PORT"
+readonly ADMIN_URL="http://localhost:$ADMIN_PORT"
+readonly USER_URL="http://localhost:$USER_PORT"
+readonly API_DOCS_URL="$BACKEND_URL/api-docs"
 
 # Process tracking
 declare -a RUNNING_PIDS=()
 declare -a SERVICE_NAMES=()
+declare -A SERVICE_PIDS_MAP
 DOCKER_STARTED=false
 OS_DETECTED=""
 NEED_SUDO=false
@@ -113,7 +121,7 @@ detect_os() {
         OS_DETECTED="linux"
         log_info "Detected OS: Linux"
     fi
-    
+
     # Check if we can use sudo without password prompt
     if command -v sudo &> /dev/null; then
         if sudo -n true 2>/dev/null; then
@@ -201,7 +209,7 @@ install_docker_apt() {
         sudo apt-get update
         sudo apt-get install -y ca-certificates curl gnupg lsb-release
         curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-        # Write the docker apt source without extra quotes. If a malformed file exists (from prior runs), fix it.
+
         if [ -f /etc/apt/sources.list.d/docker.list ]; then
             if sudo grep -q '^"' /etc/apt/sources.list.d/docker.list 2>/dev/null; then
                 log_info "Fixing malformed /etc/apt/sources.list.d/docker.list"
@@ -281,7 +289,7 @@ install_package() {
 check_port() {
     local port=$1
     local service=$2
-    
+
     if command -v lsof &> /dev/null; then
         if lsof -Pi :$port -sTCP:LISTEN -t >/dev/null 2>&1; then
             log_warning "$service (port $port) is already in use"
@@ -294,19 +302,19 @@ check_port() {
 kill_port() {
     local port=$1
     local service=$2
-    
+
     log_info "Checking for processes on port $port..."
-    
+
     if command -v lsof &> /dev/null; then
         local pids=$(lsof -ti:$port 2>/dev/null)
         if [ ! -z "$pids" ]; then
             log_warning "Found process(es) on port $port: $pids"
             log_info "Terminating process(es) on port $port..."
-            
+
             # Try graceful termination first
             echo "$pids" | xargs kill -SIGTERM 2>/dev/null || true
             sleep 2
-            
+
             # Force kill if still running
             local remaining=$(lsof -ti:$port 2>/dev/null)
             if [ ! -z "$remaining" ]; then
@@ -314,7 +322,7 @@ kill_port() {
                 echo "$remaining" | xargs kill -9 2>/dev/null || true
                 sleep 1
             fi
-            
+
             # Verify port is free
             if lsof -ti:$port &> /dev/null; then
                 log_error "Failed to free port $port"
@@ -336,7 +344,7 @@ kill_port() {
 ensure_port_free() {
     local port=$1
     local service=$2
-    
+
     if ! check_port $port "$service"; then
         kill_port $port "$service"
     fi
@@ -347,12 +355,42 @@ create_log_dir() {
     log_success "Created log directory: $LOG_DIR"
 }
 
+check_env_files() {
+    print_section "🔒 Checking Environment Configuration"
+    local missing_env=false
+
+    # Check Backend .env
+    if [ ! -f "$BACKEND_DIR/.env" ]; then
+        if [ -f "$BACKEND_DIR/.env.example" ]; then
+            log_warning "Backend .env missing. Creating from .env.example..."
+            cp "$BACKEND_DIR/.env.example" "$BACKEND_DIR/.env"
+            log_success "Created backend .env"
+        else
+            log_error "Backend .env missing and no .env.example found!"
+            missing_env=true
+        fi
+    else
+        log_success "Backend configuration found"
+    fi
+
+    # Check Frontend Admin .env
+    if [ ! -f "$ADMIN_DIR/.env" ]; then
+        if [ -f "$ADMIN_DIR/.env.example" ]; then
+             log_warning "Admin Frontend .env missing. Creating from .env.example..."
+             cp "$ADMIN_DIR/.env.example" "$ADMIN_DIR/.env"
+             log_success "Created Admin .env"
+        fi
+    fi
+
+    echo ""
+}
+
 check_and_install_dependencies() {
     print_section "📦 Checking Dependencies"
-    
+
     local missing_deps=false
     local missing_list=()
-    
+
     # Check Node.js
     if ! command -v node &> /dev/null; then
         log_warning "Node.js not found"
@@ -361,7 +399,7 @@ check_and_install_dependencies() {
     else
         log_success "Node.js $(node --version) installed"
     fi
-    
+
     # Check npm
     if ! command -v npm &> /dev/null; then
         log_warning "npm not found"
@@ -370,7 +408,7 @@ check_and_install_dependencies() {
     else
         log_success "npm $(npm --version) installed"
     fi
-    
+
     # Check curl
     if ! command -v curl &> /dev/null; then
         log_warning "curl not found - may need for health checks"
@@ -378,7 +416,7 @@ check_and_install_dependencies() {
     else
         log_success "curl installed"
     fi
-    
+
     # Check lsof
     if ! command -v lsof &> /dev/null; then
         log_warning "lsof not found - port checking may not work"
@@ -386,7 +424,7 @@ check_and_install_dependencies() {
     else
         log_success "lsof installed"
     fi
-    
+
     # Check docker / docker-compose optionally
     if ! command -v docker &> /dev/null; then
         log_warning "Docker not found - Docker services will not be available until Docker is installed"
@@ -490,7 +528,7 @@ check_and_install_dependencies() {
             return 1
         fi
     fi
-    
+
     echo ""
     return 0
 }
@@ -500,28 +538,29 @@ start_service() {
     local command=$2
     local log_file=$3
     local check_url=$4
-    
+
     log_info "Starting $name..."
-    
+
     # Start the service in background
     eval "$command" > "$log_file" 2>&1 &
     local pid=$!
-    
+
     RUNNING_PIDS+=($pid)
     SERVICE_NAMES+=("$name (PID: $pid)")
-    
+    SERVICE_PIDS_MAP[$pid]="$name"
+
     # Wait for service to be ready if check_url provided
     if [ ! -z "$check_url" ]; then
         local attempts=0
         local max_attempts=30
-        
+
         while [ $attempts -lt $max_attempts ]; do
             if curl -s "$check_url" > /dev/null 2>&1; then
                 log_success "$name started successfully (PID: $pid)"
                 echo "$pid" > "$LOG_DIR/${name// /_}.pid"
                 return 0
             fi
-            
+
             # Check if process is still running
             if ! kill -0 $pid 2>/dev/null; then
                 log_error "$name process died unexpectedly"
@@ -529,12 +568,12 @@ start_service() {
                 tail -20 "$log_file"
                 return 1
             fi
-            
+
             sleep 1
             attempts=$((attempts + 1))
             printf "."
         done
-        
+
         echo ""
         log_error "$name failed to start within ${max_attempts} seconds"
         log_error "Check log file: $log_file"
@@ -552,20 +591,20 @@ wait_for_port() {
     local service=$2
     local max_attempts=30
     local attempts=0
-    
+
     log_info "Waiting for $service on port $port..."
-    
+
     while [ $attempts -lt $max_attempts ]; do
         if nc -z localhost $port 2>/dev/null || telnet localhost $port 2>/dev/null | grep -q Connected; then
             log_success "$service is ready on port $port"
             return 0
         fi
-        
+
         sleep 1
         attempts=$((attempts + 1))
         printf "."
     done
-    
+
     echo ""
     log_warning "$service may not be fully ready on port $port"
     return 0
@@ -577,13 +616,13 @@ wait_for_port() {
 
 start_docker_services() {
     print_section "🐳 Starting Docker Services (PostgreSQL & Redis)"
-    
+
     if ! command -v docker &> /dev/null; then
         log_warning "Docker not installed - skipping database services"
         log_info "Run without database or install Docker for full functionality"
         return 0
     fi
-    
+
     # Determine if we need sudo for docker commands
     local DOCKER_CMD="docker"
     if ! docker ps &> /dev/null; then
@@ -612,22 +651,22 @@ start_docker_services() {
             esac
         fi
     fi
-    
+
     cd "$SCRIPT_DIR"
-    
+
     if [ ! -f "docker-compose.yml" ]; then
         log_warning "docker-compose.yml not found - skipping Docker services"
         return 0
     fi
-    
+
     # Check if services are already running
     if $DOCKER_CMD ps 2>/dev/null | grep -q "invoice-hub-postgres"; then
         log_success "PostgreSQL is already running"
         return 0
     fi
-    
+
     log_info "Starting PostgreSQL and Redis containers..."
-    
+
     # Determine docker compose command
     local COMPOSE_CMD=""
     if command -v docker-compose &> /dev/null; then
@@ -638,7 +677,7 @@ start_docker_services() {
         log_warning "docker-compose not available - skipping Docker services"
         return 0
     fi
-    
+
     # Add sudo if needed
     if [[ "$DOCKER_CMD" == "sudo docker" ]]; then
         COMPOSE_CMD="sudo docker-compose"
@@ -646,7 +685,7 @@ start_docker_services() {
             COMPOSE_CMD="sudo docker compose"
         fi
     fi
-    
+
     # Start services
     if $COMPOSE_CMD up -d postgres redis 2>/dev/null; then
         DOCKER_STARTED=true
@@ -656,7 +695,7 @@ start_docker_services() {
     else
         log_warning "Failed to start Docker services - will run without database"
     fi
-    
+
     echo ""
 }
 
@@ -664,7 +703,7 @@ stop_docker_services() {
     if [ "$DOCKER_STARTED" = true ]; then
         log_info "Stopping Docker services..."
         cd "$SCRIPT_DIR"
-        
+
         # Determine compose command with sudo if needed
         if command -v docker-compose &> /dev/null; then
             if docker ps &> /dev/null; then
@@ -689,22 +728,22 @@ stop_docker_services() {
 
 start_backend() {
     print_section "🚀 Starting Backend API Server"
-    
+
     if [ ! -d "$BACKEND_DIR" ]; then
         log_error "Backend directory not found: $BACKEND_DIR"
         return 1
     fi
-    
+
     # Kill any existing process on port 3000
-    ensure_port_free 3000 "Backend"
-    
+    ensure_port_free "$BACKEND_PORT" "Backend"
+
     cd "$BACKEND_DIR"
-    
+
     if [ ! -f "package.json" ]; then
         log_error "Backend package.json not found"
         return 1
     fi
-    
+
     # Install dependencies if needed
     if [ ! -d "node_modules" ]; then
         log_info "Installing backend dependencies (this may take a few minutes)..."
@@ -715,18 +754,18 @@ start_backend() {
     else
         log_success "Backend dependencies already installed"
     fi
-    
+
     # Check for ts-node
     if ! command -v ts-node &> /dev/null && [ ! -f "node_modules/.bin/ts-node" ]; then
         log_warning "ts-node not found - may affect development mode"
     fi
-    
+
     # Start backend
     start_service "Backend API" \
-        "npm run dev" \
+        "PORT=$BACKEND_PORT npm run dev" \
         "$LOG_DIR/backend.log" \
-        "http://localhost:3000/api/health"
-    
+        "http://localhost:$BACKEND_PORT/api/health"
+
     echo ""
 }
 
@@ -736,22 +775,22 @@ start_backend() {
 
 start_admin_frontend() {
     print_section "⚙️  Starting Admin Frontend"
-    
+
     if [ ! -d "$ADMIN_DIR" ]; then
         log_error "Admin frontend directory not found: $ADMIN_DIR"
         return 1
     fi
-    
+
     # Kill any existing process on port 5174
-    ensure_port_free 5174 "Admin Frontend"
-    
+    ensure_port_free "$ADMIN_PORT" "Admin Frontend"
+
     cd "$ADMIN_DIR"
-    
+
     if [ ! -f "package.json" ]; then
         log_error "Admin frontend package.json not found"
         return 1
     fi
-    
+
     # Install dependencies if needed
     if [ ! -d "node_modules" ]; then
         log_info "Installing admin frontend dependencies (this may take a few minutes)..."
@@ -762,13 +801,13 @@ start_admin_frontend() {
     else
         log_success "Admin frontend dependencies already installed"
     fi
-    
+
     # Start admin frontend
     start_service "Admin Frontend" \
-        "npm run dev" \
+        "PORT=$ADMIN_PORT npm run dev" \
         "$LOG_DIR/admin-frontend.log" \
-        "http://localhost:5174"
-    
+        "http://localhost:$ADMIN_PORT"
+
     echo ""
 }
 
@@ -778,22 +817,22 @@ start_admin_frontend() {
 
 start_user_frontend() {
     print_section "👤 Starting User Frontend"
-    
+
     if [ ! -d "$USER_DIR" ]; then
         log_error "User frontend directory not found: $USER_DIR"
         return 1
     fi
-    
+
     # Kill any existing process on port 5173
-    ensure_port_free 5173 "User Frontend"
-    
+    ensure_port_free "$USER_PORT" "User Frontend"
+
     cd "$USER_DIR"
-    
+
     if [ ! -f "package.json" ]; then
         log_error "User frontend package.json not found"
         return 1
     fi
-    
+
     # Install dependencies if needed
     if [ ! -d "node_modules" ]; then
         log_info "Installing user frontend dependencies (this may take a few minutes)..."
@@ -804,13 +843,13 @@ start_user_frontend() {
     else
         log_success "User frontend dependencies already installed"
     fi
-    
+
     # Start user frontend
     start_service "User Frontend" \
-        "npm run dev" \
+        "PORT=$USER_PORT npm run dev" \
         "$LOG_DIR/user-frontend.log" \
-        "http://localhost:5173"
-    
+        "http://localhost:$USER_PORT"
+
     echo ""
 }
 
@@ -820,42 +859,42 @@ start_user_frontend() {
 
 print_startup_info() {
     print_section "📋 Application Startup Summary"
-    
+
     echo -e "${WHITE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo -e "${GREEN}✓ All services started successfully!${NC}\n"
-    
+
     echo -e "${CYAN}Running Services:${NC}"
     for service in "${SERVICE_NAMES[@]}"; do
         echo -e "  ${GREEN}✓${NC} $service"
     done
-    
+
     echo ""
     echo -e "${CYAN}Access URLs:${NC}"
     echo -e "  ${WHITE}Backend API:${NC}       ${BLUE}$BACKEND_URL${NC}"
     echo -e "  ${WHITE}API Documentation:${NC} ${BLUE}$API_DOCS_URL${NC}"
     echo -e "  ${WHITE}Admin Dashboard:${NC}   ${BLUE}$ADMIN_URL${NC}"
     echo -e "  ${WHITE}User Application:${NC}  ${BLUE}$USER_URL${NC}"
-    
+
     echo ""
     echo -e "${CYAN}Log Files:${NC}"
     echo -e "  ${WHITE}Backend:${NC}          $LOG_DIR/backend.log"
     echo -e "  ${WHITE}Admin Frontend:${NC}   $LOG_DIR/admin-frontend.log"
     echo -e "  ${WHITE}User Frontend:${NC}    $LOG_DIR/user-frontend.log"
-    
+
     echo ""
     echo -e "${CYAN}Quick Commands:${NC}"
     echo -e "  ${WHITE}View logs:${NC}        tail -f $LOG_DIR/*.log"
     echo -e "  ${WHITE}Stop all:${NC}         Press Ctrl+C"
     echo -e "  ${WHITE}Status:${NC}           curl $BACKEND_URL/api/health"
-    
+
     echo -e "${WHITE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}\n"
 }
 
 check_health() {
     print_section "🏥 Checking Service Health"
-    
+
     local all_healthy=true
-    
+
     # Backend health
     if curl -s "$BACKEND_URL/api/health" > /dev/null 2>&1; then
         log_success "Backend API is healthy"
@@ -863,23 +902,44 @@ check_health() {
         log_warning "Backend API health check failed"
         all_healthy=false
     fi
-    
+
     # Admin frontend
     if curl -s "$ADMIN_URL" > /dev/null 2>&1; then
         log_success "Admin Frontend is responding"
     else
         log_warning "Admin Frontend not yet responding"
     fi
-    
+
     # User frontend
     if curl -s "$USER_URL" > /dev/null 2>&1; then
         log_success "User Frontend is responding"
     else
         log_warning "User Frontend not yet responding"
     fi
-    
+
     echo ""
     return 0
+}
+
+monitor_services() {
+    log_info "Monitoring services... (Press Ctrl+C to stop)"
+    echo ""
+    while true; do
+        local all_running=true
+        for pid in "${RUNNING_PIDS[@]}"; do
+            if ! kill -0 "$pid" 2>/dev/null; then
+                log_error "Service ${SERVICE_PIDS_MAP[$pid]} (PID $pid) has stopped unexpectedly!"
+                all_running=false
+            fi
+        done
+
+        if [ "$all_running" = false ]; then
+            log_error "One or more services failed. Shutting down..."
+            exit 1
+        fi
+
+        sleep 5
+    done
 }
 
 ################################################################################
@@ -888,13 +948,13 @@ check_health() {
 
 shutdown_services() {
     print_section "🛑 Shutting Down Services"
-    
+
     # Kill all running processes
     for pid in "${RUNNING_PIDS[@]}"; do
         if kill -0 $pid 2>/dev/null; then
-            log_info "Stopping process $pid..."
+            log_info "Stopping process $pid (${SERVICE_PIDS_MAP[$pid]})..."
             kill -SIGTERM $pid 2>/dev/null || true
-            
+
             # Wait a bit then force kill if needed
             sleep 2
             if kill -0 $pid 2>/dev/null; then
@@ -902,20 +962,20 @@ shutdown_services() {
             fi
         fi
     done
-    
+
     log_success "All services stopped"
     echo ""
 }
 
 cleanup() {
     print_section "🧹 Cleanup"
-    
+
     # Stop services
     shutdown_services
-    
+
     # Stop Docker services if we started them
     stop_docker_services
-    
+
     log_success "Cleanup complete"
 }
 
@@ -926,53 +986,52 @@ cleanup() {
 main() {
     # Show banner
     print_banner
-    
+
     # Setup signal handlers
     trap cleanup EXIT INT TERM
-    
+
     # Detect OS
     detect_os
-    
+
     # Create log directory
     create_log_dir
-    
+
     # Check dependencies
     if ! check_and_install_dependencies; then
         log_error "Cannot start application without required dependencies"
         exit 1
     fi
-    
+
+    # Check Environment Files
+    check_env_files
+
     # Start Docker services (optional)
     start_docker_services || log_warning "Docker services failed to start - continuing without database"
-    
+
     # Start backend
     if ! start_backend; then
         log_error "Failed to start backend - aborting startup"
         exit 1
     fi
-    
+
     # Start admin frontend
     if ! start_admin_frontend; then
         log_warning "Failed to start admin frontend - continuing with limited functionality"
     fi
-    
+
     # Start user frontend
     if ! start_user_frontend; then
         log_warning "Failed to start user frontend - continuing with limited functionality"
     fi
-    
+
     # Print startup info
     print_startup_info
-    
+
     # Check health
     check_health
-    
-    # Keep script running
-    log_info "All services are running. Press Ctrl+C to stop."
-    echo ""
-    
-    # Wait for all background processes
-    wait
+
+    # Monitor services loop
+    monitor_services
 }
 
 ################################################################################
@@ -1028,26 +1087,23 @@ case "${1:-}" in
         echo "  ${GREEN}help${NC}             - Show this help message"
         echo "  ${GREEN}--auto${NC}           - Auto-install missing dependencies and start"
         echo ""
+        echo "Environment Variables:"
+        echo "  PORT configuration:"
+        echo "    BACKEND_PORT (default: 3000)"
+        echo "    ADMIN_PORT (default: 5174)"
+        echo "    USER_PORT (default: 5173)"
+        echo ""
         echo "Examples:"
         echo "  $0                      # Start all services"
-        echo "  $0 health              # Check service health"
-        echo "  $0 logs backend        # View backend logs"
-        echo "  $0 stop                # Stop all services"
-        echo ""
-        echo "Services:"
-        echo "  - Backend API (port 3000)"
-        echo "  - Admin Frontend (port 5174)"
-        echo "  - User Frontend (port 5173)"
-        echo "  - PostgreSQL (port 5432, via Docker)"
-        echo "  - Redis (port 6379, via Docker)"
+        echo "  BACKEND_PORT=3001 $0    # Start with custom backend port"
+        echo "  $0 health               # Check service health"
         echo ""
         echo "URLs:"
-        echo "  - Backend API:       ${BLUE}http://localhost:3000${NC}"
-        echo "  - API Docs:          ${BLUE}http://localhost:3000/api-docs${NC}"
-        echo "  - Admin Dashboard:   ${BLUE}http://localhost:5174${NC}"
-        echo "  - User Application:  ${BLUE}http://localhost:5173${NC}"
+        echo "  - Backend API:       ${BLUE}http://localhost:$BACKEND_PORT${NC}"
+        echo "  - API Docs:          ${BLUE}http://localhost:$BACKEND_PORT/api-docs${NC}"
+        echo "  - Admin Dashboard:   ${BLUE}http://localhost:$ADMIN_PORT${NC}"
+        echo "  - User Application:  ${BLUE}http://localhost:$USER_PORT${NC}"
         echo ""
-        echo "For more information, see: ${BLUE}Docs/DEVELOPMENT_WORKFLOW.md${NC}"
         exit 0
         ;;
     "")

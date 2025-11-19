@@ -58,9 +58,9 @@ function ProductEditDialog({ open, product, onClose, onSuccess }: ProductEditDia
         name: product.name,
         sku: product.sku || '',
         description: product.description || '',
-        unitPrice: (product as any).unitPrice || 0,
-        vatRate: (product as any).vatRate || 23,
-        unit: (product as any).unit || 'pcs',
+        unitPrice: product.price || 0,
+        vatRate: product.vatRate || 23,
+        unit: product.unit || 'pcs',
         isActive: product.isActive,
       });
     }

@@ -14,7 +14,7 @@ import { useNavigate, useLocation, Link as RouterLink } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useAppDispatch } from '../../hooks/useRedux';
 import { setAuth, setLoading, setError } from '../../store/slices/authSlice';
 import { useLoginMutation } from '../../store/api/authApi';
@@ -32,7 +32,7 @@ function Login() {
   const location = useLocation();
   const dispatch = useAppDispatch();
   const [login, { isLoading, error: apiError }] = useLoginMutation();
-  const [successMessage, setSuccessMessage] = useState('');
+  const successMessage = location.state?.message;
 
   const {
     register,
@@ -43,12 +43,11 @@ function Login() {
   });
 
   useEffect(() => {
-    if (location.state?.message) {
-      setSuccessMessage(location.state.message);
-      toast.success(location.state.message);
+    if (successMessage) {
+      toast.success(successMessage);
       window.history.replaceState({}, document.title);
     }
-  }, [location]);
+  }, [successMessage]);
 
   const onSubmit = async (data: LoginFormData) => {
     try {
@@ -74,7 +73,8 @@ function Login() {
       dispatch(setLoading(false));
       toast.success('Login successful!');
       navigate(`/${tenant.id}/dashboard`);
-    } catch (err: any) {
+    } catch (error) {
+      const err = error as { data?: { message?: string } };
       const message = err?.data?.message || 'Login failed. Please try again.';
       dispatch(setError(message));
       dispatch(setLoading(false));
@@ -102,7 +102,7 @@ function Login() {
 
             {apiError && 'data' in apiError && (
               <Alert severity="error" sx={{ mb: 2 }}>
-                {(apiError.data as any)?.message || 'Login failed'}
+                {(apiError.data as { message?: string })?.message || 'Login failed'}
               </Alert>
             )}
 

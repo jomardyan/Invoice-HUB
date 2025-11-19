@@ -63,7 +63,7 @@ function InvoiceDetail() {
       // TODO: Call API endpoint to send email
       toast.success(`Invoice sent to ${data.email}`);
       console.log('Send email data:', data);
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to send invoice');
     }
   };

@@ -6,7 +6,6 @@ import {
   Card,
   CardContent,
   Grid,
-  Chip,
   Switch,
   FormControlLabel,
 } from '@mui/material';
@@ -68,10 +67,10 @@ function KSeFDashboard() {
     navigate(`/${tenant?.id}/ksef/submissions/${submission.id}`);
   };
 
-  const handleRetrySubmission = async (submission: KSeFSubmission) => {
+  const handleRetrySubmission = async (_submission: KSeFSubmission) => {
     try {
       toast.success('Submission retried');
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to retry submission');
     }
   };

@@ -58,18 +58,18 @@ function InvoiceList() {
       try {
         await deleteInvoice({ tenantId: tenant?.id || '', id: invoice.id }).unwrap();
         toast.success('Invoice deleted successfully');
-      } catch (error) {
+      } catch (_error) {
         toast.error('Failed to delete invoice');
       }
     }
   };
 
-  const handleSendInvoice = (invoice: Invoice) => {
+  const handleSendInvoice = (_invoice: Invoice) => {
     // TODO: Implement send invoice dialog
     toast.info('Send invoice feature coming soon');
   };
 
-  const handleDownloadInvoice = (invoice: Invoice) => {
+  const handleDownloadInvoice = (_invoice: Invoice) => {
     // TODO: Implement download PDF
     toast.info('Download PDF feature coming soon');
   };
@@ -84,32 +84,29 @@ function InvoiceList() {
       id: 'customer.name',
       label: 'Customer',
       minWidth: 180,
-      format: (value, row) => row.customer?.name || '-',
+      format: (_value, row) => row.customer?.name || '-',
     },
     {
-      id: 'issueDate',
-      label: 'Issue Date',
-      minWidth: 120,
-      format: (value) => format(new Date(value), 'MMM dd, yyyy'),
+      format: (value) => format(new Date(value as string), 'MMM dd, yyyy'),
     },
     {
       id: 'dueDate',
       label: 'Due Date',
       minWidth: 120,
-      format: (value) => format(new Date(value), 'MMM dd, yyyy'),
+      format: (value) => format(new Date(value as string), 'MMM dd, yyyy'),
     },
     {
       id: 'totalAmount',
       label: 'Total',
       minWidth: 120,
       align: 'right',
-      format: (value, row) => `${row.currency} ${value.toLocaleString()}`,
+      format: (value, row) => `${row.currency} ${(value as number).toLocaleString()}`,
     },
     {
       id: 'status',
       label: 'Status',
       minWidth: 120,
-      format: (value) => <StatusBadge status={value} />,
+      format: (value) => <StatusBadge status={value as string} />,
     },
   ];
 

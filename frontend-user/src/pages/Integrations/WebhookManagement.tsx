@@ -16,7 +16,6 @@ import {
   DialogContent,
   DialogActions,
   Divider,
-  FormControl,
   FormGroup,
   FormControlLabel,
   Checkbox,

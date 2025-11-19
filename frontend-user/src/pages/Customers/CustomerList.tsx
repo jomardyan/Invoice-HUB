@@ -54,7 +54,7 @@ function CustomerList() {
       try {
         await deleteCustomer({ tenantId: tenant?.id || '', id: customer.id }).unwrap();
         toast.success('Customer deleted successfully');
-      } catch (error) {
+      } catch (_error) {
         toast.error('Failed to delete customer');
       }
     }

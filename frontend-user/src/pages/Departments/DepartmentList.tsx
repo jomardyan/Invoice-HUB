@@ -41,11 +41,11 @@ function DepartmentList() {
     navigate(`/${tenant?.id}/departments/edit/${department.id}`);
   };
 
-  const handleDeleteDepartment = async (department: Department) => {
+  const handleDeleteDepartment = async (_department: Department) => {
     if (window.confirm('Are you sure you want to deactivate this department?')) {
       try {
         toast.success('Department deactivated successfully');
-      } catch (error) {
+      } catch (_error) {
         toast.error('Failed to deactivate department');
       }
     }
@@ -58,17 +58,19 @@ function DepartmentList() {
       id: 'manager.name',
       label: 'Manager',
       minWidth: 150,
-      format: (v, row) => row.manager?.name || '-',
+      format: (_v, row) => row.manager?.name || '-',
     },
     {
       id: 'budgetLimits',
       label: 'Monthly Budget',
       minWidth: 120,
       align: 'right',
-      format: (value: any) =>
-        value?.monthly
-          ? `${value.monthly.toLocaleString()} ${value.currency || 'PLN'}`
-          : '-',
+      format: (value) => {
+        const budget = value as { monthly?: number; currency?: string };
+        return budget?.monthly
+          ? `${budget.monthly.toLocaleString()} ${budget.currency || 'PLN'}`
+          : '-';
+      },
     },
     {
       id: 'isActive',

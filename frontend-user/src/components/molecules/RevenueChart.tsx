@@ -64,7 +64,7 @@ function RevenueChart({ data, isLoading }: RevenueChartProps) {
             y: {
                 beginAtZero: true,
                 ticks: {
-                    callback: (value: any) => `PLN ${value.toLocaleString()}`,
+                    callback: (value: string | number) => `PLN ${value.toLocaleString()}`,
                 },
             },
         },

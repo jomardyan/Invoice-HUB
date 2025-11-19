@@ -69,7 +69,8 @@ function Register() {
       navigate('/login', {
         state: { message: 'Account created successfully! Please log in.' },
       });
-    } catch (err: any) {
+    } catch (error) {
+      const err = error as { data?: { message?: string } };
       setError(err.data?.message || 'Registration failed. Please try again.');
     }
   };

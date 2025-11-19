@@ -10,7 +10,6 @@ import {
     Box,
     TextField,
     InputAdornment,
-    Chip,
     IconButton,
     Menu,
     MenuItem,
@@ -27,7 +26,7 @@ export interface Column<T> {
     label: string;
     minWidth?: number;
     align?: 'left' | 'right' | 'center';
-    format?: (value: any, row: T) => ReactNode;
+    format?: (value: unknown, row: T) => ReactNode;
 }
 
 export interface Action<T> {
@@ -158,8 +157,8 @@ function DataTable<T extends { id: string }>({
                                 <TableRow hover key={row.id}>
                                     {columns.map((column) => {
                                         const value = column.id.includes('.')
-                                            ? column.id.split('.').reduce((obj: any, key) => obj?.[key], row)
-                                            : (row as any)[column.id];
+                                            ? column.id.split('.').reduce((obj, key) => (obj as Record<string, unknown>)?.[key], row as unknown)
+                                            : (row as Record<string, unknown>)[column.id as string];
                                         return (
                                             <TableCell key={String(column.id)} align={column.align}>
                                                 {column.format ? column.format(value, row) : value}

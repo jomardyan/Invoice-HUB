@@ -6,6 +6,7 @@ import {
   Tabs,
   Tab,
   Chip,
+  ChipProps,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import AddIcon from '@mui/icons-material/Add';
@@ -41,9 +42,9 @@ function ExpenseList() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [total, setTotal] = useState(0);
+  const [expenses, _setExpenses] = useState<Expense[]>([]);
+  const [loading, _setLoading] = useState(false);
+  const [total, _setTotal] = useState(0);
 
   // TODO: Replace with actual API call using RTK Query
   // const { data, isLoading } = useGetExpensesQuery(...)
@@ -65,45 +66,46 @@ function ExpenseList() {
   };
 
   const handleDeleteExpense = async (expense: Expense) => {
-    if (window.confirm('Are you sure you want to delete this expense?')) {
+    if (window.confirm(`Are you sure you want to delete expense ${expense.expenseNumber}?`)) {
       try {
         // TODO: Implement delete API call
         toast.success('Expense deleted successfully');
-      } catch (error) {
+      } catch (_error) {
         toast.error('Failed to delete expense');
       }
     }
   };
 
-  const handleApproveExpense = async (expense: Expense) => {
+  const handleApproveExpense = async (_expense: Expense) => {
     try {
       // TODO: Implement approve API call
       toast.success('Expense approved');
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to approve expense');
     }
   };
 
-  const handleRejectExpense = async (expense: Expense) => {
+  const handleRejectExpense = async (_expense: Expense) => {
     try {
       // TODO: Implement reject API call
       toast.success('Expense rejected');
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to reject expense');
     }
   };
 
-  const handleMarkAsPaid = async (expense: Expense) => {
+  const handleMarkAsPaid = async (_expense: Expense) => {
     try {
       // TODO: Implement mark as paid API call
       toast.success('Expense marked as paid');
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to mark expense as paid');
     }
   };
 
   const getCategoryColor = (category: string) => {
-    const colors: Record<string, any> = {
+    type ChipColor = ChipProps['color'];
+    const colors: Record<string, ChipColor> = {
       office_supplies: 'default',
       utilities: 'info',
       rent: 'warning',

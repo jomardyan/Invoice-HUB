@@ -13,6 +13,7 @@ import { restoreAuth } from './store/slices/authSlice';
 import { useTokenRefresh } from './hooks/useTokenRefresh';
 import AppRoutes from './routes';
 import './i18n';
+import ThemeToggleButton from './components/ThemeToggleButton';
 
 function AppContent() {
   const theme = useAppSelector((state) => state.ui.theme);
@@ -35,6 +36,7 @@ function AppContent() {
         localStorage.removeItem('authState');
       }
     }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setAppReady(true);
   }, [dispatch]);
 
@@ -52,6 +54,9 @@ function AppContent() {
   return (
     <ThemeProvider theme={currentTheme}>
       <CssBaseline />
+      <Box sx={{ position: 'absolute', top: 16, right: 16, zIndex: 1301 }}>
+        <ThemeToggleButton />
+      </Box>
       <BrowserRouter>
         <AppRoutes />
       </BrowserRouter>

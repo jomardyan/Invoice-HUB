@@ -42,7 +42,7 @@
     "@sentry/node": "^8.38.0",
     "@sentry/profiling-node": "^8.38.0",
     "axios": "^1.7.7",
-    "bcryptjs": "^2.4.3",
+    "bcryptjs": "^3.0.3",
     "bullmq": "^5.26.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
@@ -74,7 +74,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@types/bcryptjs": "^2.4.6",
+    "@types/bcryptjs": "^3.0.0",
     "@types/better-sqlite3": "^7.6.12",
     "@types/compression": "^1.7.5",
     "@types/cors": "^2.8.17",

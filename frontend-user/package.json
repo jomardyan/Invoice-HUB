@@ -70,7 +70,7 @@
     "jest": "latest",
     "jest-environment-jsdom": "^30.2.0",
     "prettier": "latest",
-    "ts-jest": "^29.4.5",
+    "ts-jest": "^29.4.6",
     "typescript": "latest",
     "typescript-eslint": "latest",
     "vite": "latest"
